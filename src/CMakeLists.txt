@@ -8,7 +8,7 @@ SET( VSPVER_PATCH 0 )
 
 SET(CMAKE_PREFIX_PATH
       "C:/Program Files/FLTK"
-      ${VSP_SOURCE_DIR}/libxml2-2.7.8.win32
+      ${VSP_SOURCE_DIR}/libxml2
       ${VSP_SOURCE_DIR}/jpeg-8c
       ${VSP_SOURCE_DIR}/jpeg-8c/Release
 )
