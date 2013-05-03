@@ -157,6 +157,7 @@ double xmlFindPropDouble( xmlNodePtr node, const char * name, double def )
     return def;
 
   str = (char *)xmlGetProp( node, (const xmlChar *)name );
+
   if ( str )
   {
 	def = atof( str );
@@ -172,7 +173,7 @@ const char* xmlFindPropString( xmlNodePtr node, const char * name, const char* d
   if ( node == NULL )
     return def;
 
-  ret = (char *)xmlGetProp( node, (const xmlChar *)name );
+    ret = (char *)xmlGetProp( node, (const xmlChar *)name );
   if ( ret )
       return ret;
 
