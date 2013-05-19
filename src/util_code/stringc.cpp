@@ -18,7 +18,7 @@
 
 Stringc::Stringc()
 {
-    chunk_size = 16;
+    chunk_size = STRINGC_CHUNK_SIZE;
     total_size = 0;
     num_chars = 0;
     make_space();
@@ -29,7 +29,7 @@ Stringc::Stringc()
 
 Stringc::Stringc(const char ch)
 {
-    chunk_size = 16;
+    chunk_size = STRINGC_CHUNK_SIZE;
     num_chars = 1;
     make_space();
     (*this)[0] = ch;
@@ -40,7 +40,7 @@ Stringc::Stringc(const char ch)
 
 Stringc::Stringc(const char *ch_array)
 {
-    chunk_size = 16;
+    chunk_size = STRINGC_CHUNK_SIZE;
     if (ch_array)
       num_chars = strlen(ch_array);
     else
@@ -55,7 +55,7 @@ Stringc::Stringc(const char *ch_array)
 
 Stringc::Stringc(int ichar)
 {
-   chunk_size = 16;
+   chunk_size = STRINGC_CHUNK_SIZE;
    num_chars = ichar;
    make_space();
    for (int i=0; i<num_chars; i++)
@@ -88,6 +88,7 @@ Stringc::~Stringc()
 
 void Stringc::make_space()
 {
+
     int size_mult = (num_chars+1)/chunk_size+1;
     total_size = size_mult*chunk_size;
     char_array = new char[total_size];
@@ -98,7 +99,8 @@ void Stringc::make_space()
 void Stringc::clear_space()
 {
 //    if ( num_chars >= 0 ) delete [] char_array;
-    if ( total_size >= 0 ) delete [] char_array;
+
+	if ( total_size >= 0 ) delete [] char_array;
 }
 
 //----------------------------------------------------------------------------
@@ -348,6 +350,7 @@ void Stringc::delete_word(int iword)
          cout << "   Word index is greater than the number of words.\n";
       }
 }
+
 
 //----------------------------------------------------------------------------
 
@@ -676,12 +679,12 @@ void Stringc::insert_string_at (int position, const char character)
 
 //----------------------------------------------------------------------------
 
-int Stringc::search_for_substring( char character )
+int Stringc::search_for_substring( int istart, char character )
 {
 
 // search for the character
 
-   for ( int i = 0; i < num_chars; i++ )
+   for ( int i = istart; i < num_chars; i++ )
       {
       if ( char_array[i] == character )
          {
@@ -692,6 +695,13 @@ int Stringc::search_for_substring( char character )
 // if no match was found, return minus 1
 
    return -1;
+}
+
+//----------------------------------------------------------------------------
+
+int Stringc::search_for_substring( char character )
+{
+	return search_for_substring( 0, character );
 }
 
 //----------------------------------------------------------------------------
@@ -978,7 +988,7 @@ Stringc& Stringc::operator=( const char ch)
    {
    (*this).clear_space();
    (*this).num_chars = 1;
-   (*this).chunk_size = 8;
+   (*this).chunk_size = STRINGC_CHUNK_SIZE;
    (*this).make_space();
    (*this).char_array[0] = ch;
    (*this).char_array[1] = '\0';
@@ -1006,7 +1016,7 @@ Stringc& Stringc::operator=( const char *cstring )
    {
    (*this).clear_space();
    (*this).num_chars = strlen(cstring);
-   (*this).chunk_size = 8;
+   (*this).chunk_size = STRINGC_CHUNK_SIZE;
    (*this).make_space();
    for (int i=0; i < (int)strlen(cstring); i++)
       (*this).char_array[i] = cstring[i];

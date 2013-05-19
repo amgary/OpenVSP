@@ -364,9 +364,9 @@ double LineSource::GetTargetLen( double base_len, vec3d &  pos )
 	}
 
 	if ( retlen > base_len )
-		printf("Ret Len\n", retlen );
+		printf("Ret Len\n");
 	else if ( retlen < m_Len1 && retlen < m_Len2 )
-		printf("Ret Len\n", retlen );
+		printf("Ret Len\n");
 
 
 	return retlen;
@@ -752,6 +752,7 @@ GridDensity::GridDensity()
 	SetNCircSeg(16.0);
 	m_MaxGap = 0.005;
 	m_GrowRatio = 1.3;
+	m_RigorLimit = 0;
 }
 
 GridDensity::~GridDensity()

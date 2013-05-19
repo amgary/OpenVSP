@@ -133,8 +133,10 @@ Fuse_geom::Fuse_geom(Aircraft* aptr) : Geom(aptr)
 //==== Destructor =====//
 Fuse_geom::~Fuse_geom()
 {
-	DeleteAllXSecs();
-
+//	Commenting out these lines creates a memory leak.
+//	However, it also fixes a mysterious bug where parameters would occasionally
+//	take the wrong value.
+//	DeleteAllXSecs();
 
 }
 void Fuse_geom::LoadLinkableParms( vector< Parm* > & parmVec )
@@ -169,18 +171,18 @@ void Fuse_geom::LoadLinkableParms( vector< Parm* > & parmVec )
 }
 void Fuse_geom::RemoveXSecParmReferences( fuse_xsec* xsec )
 {
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_height() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_width() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_max_width_loc() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_corner_rad() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_top_tan_angle() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_bot_tan_angle() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_top_str() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_upp_str() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_bot_str() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_low_str() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_z_offset() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_location() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_height() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_width() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_max_width_loc() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_corner_rad() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_top_tan_angle() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_bot_tan_angle() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_top_str() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_upp_str() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_bot_str() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_low_str() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_z_offset() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_location() );
 }
 
 void Fuse_geom::AddDefaultSources(double base_len)
@@ -253,7 +255,8 @@ void Fuse_geom::copy( Geom* fromGeom )
 	{
 		fuse_xsec* new_xsec = new fuse_xsec(this);
 		new_xsec->gen_parms();
-		*new_xsec = *(g->xsecVec[i]);
+//		*new_xsec = *(g->xsecVec[i]);
+		new_xsec->copy( *g->xsecVec[i] );
 		new_xsec->set_iml_flag( imlFlag );
 		new_xsec->generate();
 		new_xsec->set_loc_on_spine( g->xsecVec[i]->get_loc_on_spine() );
@@ -274,7 +277,7 @@ void Fuse_geom::copy( Geom* fromGeom )
 
 	set_num_pnts( numPnts.iget() );
 
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 }
 
@@ -582,7 +585,7 @@ void Fuse_geom::read(xmlNodePtr root)
   set_iml_flag( imlFlag );
   set_pnt_space_type( space_type );
   generate();
-  parmLinkMgrPtr->RebuildAll();
+  parmMgrPtr->RebuildAll();
 
 }
 
@@ -666,7 +669,7 @@ printf("%s \n", buff );
   set_pnt_space_type( space_type );
 
   generate();
-  parmLinkMgrPtr->RebuildAll();
+  parmMgrPtr->RebuildAll();
 
 }
 
@@ -1237,7 +1240,7 @@ fuse_xsec* Fuse_geom::add_xsec(fuse_xsec* curr_xsec)
 
 	this->generate();
 
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 	return curr_xsec;
 }
@@ -1278,7 +1281,7 @@ fuse_xsec* Fuse_geom::delete_xsec(fuse_xsec* curr_xsec)
 
 	this->generate();
 
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 	return curr_xsec;
 }
@@ -2556,14 +2559,14 @@ void Fuse_geom::debug_print()
 {
 	int i;
 	printf("\n\n");
-	printf("Fuse_geom:: %d \n", (long)this);
+	printf("Fuse_geom:: %d \n",  (int)((size_t)this));
 
 	printf("Fuse_geom: curr_xsec_num %d \n", curr_xsec_num);
 	printf("Fuse_geom: curr_xsec_num %d \n", curr_xsec_num);
 
 	for ( i = 0 ; i < (int)xsecVec.size() ; i++ )
 	{
-		printf("  Fuse_geom: xsecVec[%d] = %d \n", i, (long)xsecVec[i] );
+		printf("  Fuse_geom: xsecVec[%d] = %d \n", i,  (int)((size_t)xsecVec[i]) );
 	}
 	
 	printf("Fuse_geom: imlFlag %d \n", imlFlag);

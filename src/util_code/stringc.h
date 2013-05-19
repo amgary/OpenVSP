@@ -22,6 +22,8 @@ using namespace std;
 #include <string.h>
 #include "defines.h"
 
+#define STRINGC_CHUNK_SIZE (64)
+
 #ifndef FALSE
 #define FALSE 0
 #endif
@@ -82,6 +84,7 @@ public:
    void concatenate(const Stringc cstring); // Add a string to end of string
 
    VSPDLL int search_for_substring(const char* substring);  // find location of substring
+   int search_for_substring( int istart, char character);  // find location from istart
    int search_for_substring(char character);         // find location of character
    int matchwild(Stringc wildcardstring);			     // wildcard matching (using *?)
 

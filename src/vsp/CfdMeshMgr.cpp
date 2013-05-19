@@ -45,11 +45,19 @@ Wake::~Wake()
 
 void Wake::Draw()
 {
-	for ( int i = 0 ; i < (int)m_LeadingCurves.size() ; i++ )
-		m_LeadingCurves[i]->m_SCurve_A->Draw();
+	glColor3ub( 255, 255, 0 );
+	glBegin( GL_LINE_STRIP );
+	for ( int i = 0 ; i < (int)m_LeadingEdge.size() ; i++ )
+	{
+		glVertex3dv( m_LeadingEdge[i].data() );
+	}
+	glEnd();
 
-	for ( int i = 0 ; i < (int)m_SurfVec.size() ; i++ )
-		m_SurfVec[i]->Draw();
+	//for ( int i = 0 ; i < (int)m_LeadingCurves.size() ; i++ )
+	//	m_LeadingCurves[i]->m_SCurve_A->Draw();
+
+	//for ( int i = 0 ; i < (int)m_SurfVec.size() ; i++ )
+	//	m_SurfVec[i]->Draw();
 
 }
 	
@@ -111,6 +119,25 @@ void Wake::BuildSurfs(  )
 					vec3d te_pnt = m_WakeMgrPtr->ComputeTrailEdgePnt( le_pnts[i] );
 
 					cpnts[i][j] = le_pnts[i] + (te_pnt - le_pnts[i])*fract;
+				}
+			}
+
+			//==== Check Surf Orientation ====//
+			int nu = cpnts.size();
+			int nw = cpnts[0].size();
+			vec3d vu = cpnts[nu-1][0] - cpnts[0][0];
+			vec3d vw = cpnts[0][nw-1] - cpnts[0][0];
+			vec3d cp = cross( vu, vw );
+			if ( cp.z() < 0.0 )
+			{
+				//==== Flip Surface ====//
+				vector< vector< vec3d > > temppnts = cpnts;
+				for ( int i = 0 ; i < (int)temppnts.size() ; i++ )
+				{
+					for ( int j = 0 ; j < (int)temppnts[i].size() ; j++ )
+					{
+						cpnts[nu - 1 - i][j] = temppnts[i][j];
+					}
 				}
 			}
 
@@ -287,14 +314,30 @@ void WakeMgr::StretchWakes()
 	}
 }
 
-
-	
 void WakeMgr::Draw()
 {
+	double scale = cfdMeshMgrPtr->GetWakeScale();
+	double factor = scale - 1.0;
 
+	glColor4ub( 255, 204, 51, 255 );		// Yellowish
+	for ( int e = 0 ; e < (int)m_LeadingEdgeVec.size() ; e++ )
+	{
+		glBegin( GL_LINES );
+		for ( int i = 0 ; i < (int)m_LeadingEdgeVec[e].size() ; i++ )
+		{
+			vec3d le = m_LeadingEdgeVec[e][i];
+			glVertex3dv( le.data() );
+
+			vec3d te = ComputeTrailEdgePnt( le );
+			double numer = te.x()-m_StartStretchX;
+			double fract = numer/(m_EndX-m_StartStretchX);
+			double xx = m_StartStretchX + numer*(1.0 + factor*fract*fract);
+			double zz = te.z() + (xx - te.x())*tan( DEG2RAD(m_Angle) );
+			glVertex3d( xx, te.y(), zz );
+		}
+		glEnd();
+	}
 }
-
-
 
 //=============================================================//
 //=============================================================//
@@ -312,6 +355,7 @@ CfdMeshMgr::CfdMeshMgr()
 	m_FarXScale = m_FarYScale = m_FarZScale = 4.0;
 
 	m_YSlicePlane = new Surf();
+	m_YSlicePlane->SetGridDensityPtr( &m_GridDensity );
 
 #ifdef DEBUG_CFD_MESH
 	m_DebugDir  = Stringc("MeshDebug/");
@@ -410,7 +454,7 @@ void CfdMeshMgr::SetExportFileFlag( bool flag, int type )
 void CfdMeshMgr::ResetExportFileNames()
 {
 	int pos;
-	char *suffix[]={".stl",".poly",".tri",".obj", "_NASCART.dat", "_NASCART.key", ".msh", ".srf"};
+	const char *suffix[]={".stl",".poly",".tri",".obj", "_NASCART.dat", "_NASCART.key", ".msh", ".srf"};
 
 	for ( int i = 0 ; i < NUM_FILE_NAMES ; i++ )
 	{
@@ -434,7 +478,7 @@ void CfdMeshMgr::addOutputText( const char* str, int output_type )
         }
         else
         {
-                printf( str );
+                printf( "%s", str );
                 fflush( stdout );
         }
 }
@@ -845,37 +889,69 @@ void CfdMeshMgr::BuildGrid()
 #endif
 }
 
-double CfdMeshMgr::BuildTargetMap( )
+void CfdMeshMgr::BuildTargetMap( int output_type )
 {
-	MSCloudFourD ms_cloud;
+	MSCloud ms_cloud;
+	vector< MapSource* > allsources;
+
+	if ( m_HalfMeshFlag )
+		m_YSlicePlane->BuildTargetMap( allsources, -1 );
 
 	int i;
 	for ( i = 0 ; i < (int)m_SurfVec.size() ; i++ )
 	{
-		m_SurfVec[i]->BuildTargetMap( ms_cloud );
+		m_SurfVec[i]->BuildTargetMap( allsources, i );
+		m_SurfVec[i]->LimitTargetMap();
 	}
 
-    ms_cloud.sort();
-    double minmap = ms_cloud.sources[0].m_initstr;
+	// Number of times to propagate intersection edges through surfaces
+	int nedgeprop = 4;
 
-	MSTreeFourD ms_tree( 4, ms_cloud, KDTreeSingleIndexAdaptorParams( 10 ) );
-	ms_tree.buildIndex();
+	list< ISegChain* >::iterator c;
+	for ( i = 0; i < nedgeprop; i ++ )
+	{
+		for ( c = m_ISegChainList.begin() ; c != m_ISegChainList.end(); c++ )
+		{
+			(*c)->CalcDensity( &m_GridDensity );
+			(*c)->SpreadDensity();
+		}
+	}
 
-//	// Prune sources which have no effect because other nearby sources are smaller.
-//	ms_cloud.prune_edge_sources( ms_tree, &m_GridDensity );
-//	ms_tree.buildIndex();
-//
-//	printf("%d Sources\n", ms_cloud.sources.size());
+	if( m_GridDensity.GetRigorLimit() )
+	{
+		if ( output_type != CfdMeshMgr::NO_OUTPUT )
+			addOutputText( " Rigorous 3D Limiting\n", output_type );
 
+		for ( i = 0 ; i < (int)m_SurfVec.size() ; i++ )
+		{
+			ms_cloud.sources.clear();
+			ms_cloud.sources.reserve( allsources.size() );
 
-//	for ( i = 0 ; i < (int)m_SurfVec.size() ; i++ )
-//	{
-//		m_SurfVec[i]->LimitTargetMap( ms_cloud, ms_tree );
-//	}
+			double minmap = numeric_limits<double>::max( );
 
-    ms_cloud.LimitTargetMap( ms_tree, &m_GridDensity );
+			for( int j = 0; j < allsources.size(); j++ )
+			{
+				if( allsources[j]->m_surfid != i )
+				{
+					if( allsources[j]->m_str < minmap )
+					{
+						minmap = allsources[j]->m_str;
+					}
+					ms_cloud.sources.push_back( allsources[j] );
+				}
+			}
 
-    return minmap;
+			MSTree ms_tree( 3, ms_cloud, KDTreeSingleIndexAdaptorParams( 10 ) );
+			ms_tree.buildIndex();
+
+			m_SurfVec[i]->LimitTargetMap( ms_cloud, ms_tree, minmap );
+		}
+
+		for ( c = m_ISegChainList.begin() ; c != m_ISegChainList.end(); c++ )
+		{
+			(*c)->CalcDensity( &m_GridDensity );
+		}
+	}
 }
 
 void CfdMeshMgr::Remesh(int output_type)
@@ -887,7 +963,7 @@ void CfdMeshMgr::Remesh(int output_type)
 	{
 		int num_tris = 0;
 
-		for ( int iter = 0 ; iter < 10 ; iter++ )
+		for ( int iter = 0 ; iter < 10 ; iter++ )  
 		{
 			m_SurfVec[i]->GetMesh()->m_Iteration = iter;
 			num_tris = 0;
@@ -1017,12 +1093,27 @@ void CfdMeshMgr::WriteSTL( const char* filename )
 	FILE* file_id = fopen(filename, "w");
 	if ( file_id )
 	{
+		int numwake = 0;
 		fprintf(file_id, "solid\n");
 		for ( int i = 0 ; i < (int)m_SurfVec.size() ; i++ )
 		{
-			m_SurfVec[i]->GetMesh()->WriteSTL( file_id );
+			if ( !m_SurfVec[i]->GetWakeFlag() )
+				m_SurfVec[i]->GetMesh()->WriteSTL( file_id );
+			else
+				numwake++;
 		}
 		fprintf(file_id, "endsolid\n");
+
+		if( numwake > 0 )
+		{
+			fprintf(file_id, "solid wake\n");
+			for ( int i = 0 ; i < (int)m_SurfVec.size() ; i++ )
+			{
+				if ( m_SurfVec[i]->GetWakeFlag() )
+					m_SurfVec[i]->GetMesh()->WriteSTL( file_id );
+			}
+			fprintf(file_id, "endsolid wake\n");
+		}
 		fclose(file_id);
 	}
 }
@@ -1111,7 +1202,7 @@ void CfdMeshMgr::WriteTetGen( const char* filename )
 	}
 	else
 	{
-		fprintf( fp, "%d\n", planeIndVec.size() + 1 );
+		fprintf( fp, "%d\n", (int)(planeIndVec.size() + 1) );
 		fprintf( fp, "4  1 2 6 5\n" );
 		for ( int i = 0 ; i < (int)planeIndVec.size() ; i++ )
 		{
@@ -1146,7 +1237,7 @@ void CfdMeshMgr::WriteTetGen( const char* filename )
 			int ind3 = pntShift[i2] + 1 + 8;
 
 			fprintf( fp, "1\n" );
-			fprintf( fp, "3 %d %d %d\n", ind1, ind2, ind3, m_SurfVec[i]->GetCompID()+1 );
+			fprintf( fp, "3 %d %d %d\n", ind1, ind2, ind3);
 		}
 	}
 
@@ -1174,7 +1265,7 @@ void CfdMeshMgr::WriteTetGen( const char* filename )
 		interiorPntVec = tmpPntVec;
 	}
 
-	fprintf( fp, "%d\n", interiorPntVec.size() );
+	fprintf( fp, "%d\n", (int)interiorPntVec.size() );
 	for ( int i = 0 ; i < (int)interiorPntVec.size() ; i++ )
 	{
 		vec3d p = interiorPntVec[i];
@@ -1333,6 +1424,22 @@ void CfdMeshMgr::WriteNASCART_Obj_Tri_Gmsh( const char* dat_fn, const char* key_
 		}
 	}
 
+	vector< int > compIDVec;
+	for ( int i = 0 ; i < (int)m_SurfVec.size() ; i++ )
+	{
+		if ( !m_SurfVec[i]->GetWakeFlag() )
+		{
+			compIDVec.push_back( m_SurfVec[i]->GetCompID() + 1 );
+		}
+	}
+	for ( int i = 0 ; i < (int)m_SurfVec.size() ; i++ )
+	{
+		if ( m_SurfVec[i]->GetWakeFlag() )
+		{
+			compIDVec.push_back( m_SurfVec[i]->GetCompID() + 1 + 10000 );
+		}
+	}
+
 	if ( key_fn )
 	{
 		//==== Open file ====//
@@ -1341,22 +1448,6 @@ void CfdMeshMgr::WriteNASCART_Obj_Tri_Gmsh( const char* dat_fn, const char* key_
 		if ( fp )
 		{
 			fprintf( fp, "Color	Name			BCType\n");
-
-			vector< int > compIDVec;
-			for ( int i = 0 ; i < (int)m_SurfVec.size() ; i++ )		
-			{
-				if ( !m_SurfVec[i]->GetWakeFlag() )
-				{
-					compIDVec.push_back( m_SurfVec[i]->GetCompID()+1 );
-				}
-			}
-			for ( int i = 0 ; i < (int)m_SurfVec.size() ; i++ )
-			{
-				if ( m_SurfVec[i]->GetWakeFlag() )
-				{
-					compIDVec.push_back( m_SurfVec[i]->GetCompID()+1 + 100 );
-				}
-			}
 
 			for ( int i = 0 ; i < (int)compIDVec.size() ; i++ )
 			{
@@ -1423,7 +1514,7 @@ void CfdMeshMgr::WriteNASCART_Obj_Tri_Gmsh( const char* dat_fn, const char* key_
 				vector < SimpTri >& sTriVec = m_SurfVec[i]->GetMesh()->GetSimpTriVec();
 				for ( int t = 0 ; t <  (int)sTriVec.size() ; t++ )
 				{
-					fprintf( fp, "%d \n", m_SurfVec[i]->GetCompID()+1 );
+					fprintf( fp, "%d \n", compIDVec[i] );
 				}
 			}
 
@@ -1440,7 +1531,7 @@ void CfdMeshMgr::WriteNASCART_Obj_Tri_Gmsh( const char* dat_fn, const char* key_
 		if ( fp )
 		{
 			fprintf(fp, "$MeshFormat\n" );
-			fprintf(fp, "2.2 0 %d\n", sizeof(double) );
+			fprintf(fp, "2.2 0 %d\n", (int)sizeof(double) );
 			fprintf(fp, "$EndMeshFormat\n" );
 
 			//==== Write Nodes ====//
@@ -1497,7 +1588,7 @@ void CfdMeshMgr::WriteSurfsIntCurves( const char* filename )
 			vector< int > idVec = iter->second;
 			fprintf( fp, "BEGIN Component\n" );
 			fprintf( fp, "%d		// Comp ID \n",		compId );
-			fprintf( fp, "%d		// Num Surfs \n",	idVec.size() );
+			fprintf( fp, "%d		// Num Surfs \n",	(int)idVec.size() );
 			for (int i = 0 ; i < (int)idVec.size() ; i++ )
 			{
 				fprintf( fp, "%d		// Surf ID \n",	idVec[i] );
@@ -1827,7 +1918,6 @@ int CfdMeshMgr::BuildIndMap( vector< vec3d* > & allPntVec, map< int, vector< int
 
 }
 
-
 int  CfdMeshMgr::FindPntIndex(  vec3d& pnt, vector< vec3d* > & allPntVec, map< int, vector< int > >& indMap )
 {
 	double tol = 1.0e-12;
@@ -1854,6 +1944,14 @@ int  CfdMeshMgr::FindPntIndex(  vec3d& pnt, vector< vec3d* > & allPntVec, map< i
 	return 0;
 }
 
+void CfdMeshMgr::BuildCurves()
+{
+	list< ISegChain* >::iterator c;
+	for ( c = m_ISegChainList.begin() ; c != m_ISegChainList.end(); c++ )
+	{
+		(*c)->BuildCurves();
+	}
+}
 void CfdMeshMgr::Intersect()
 {
 	//==== Quad Tree Intersection - Intersection Segments Get Loaded at AddIntersectionSeg ===//
@@ -1876,7 +1974,7 @@ void CfdMeshMgr::Intersect()
 
 	IntersectSplitChains();
 
-
+	BuildCurves();
 }
 
 void CfdMeshMgr::IntersectYSlicePlane()
@@ -1952,7 +2050,7 @@ void CfdMeshMgr::IntersectWakes()
 	}
 }
 
-void CfdMeshMgr::InitMesh( double minmap )
+void CfdMeshMgr::InitMesh( )
 {
 	bool PrintProgress = false;
 	#ifdef DEBUG_CFD_MESH
@@ -1960,7 +2058,7 @@ void CfdMeshMgr::InitMesh( double minmap )
 	#endif
 
 	if ( PrintProgress )	printf("TessellateChains\n");
-	TessellateChains( minmap );
+	TessellateChains();
 
 //DebugWriteChains( "Tess_UW", true );
 
@@ -2510,56 +2608,16 @@ void CfdMeshMgr::MergeInteriorChainIPnts()
 	}
 }
 
-void CfdMeshMgr::TessellateChains( double minmap )
+void CfdMeshMgr::TessellateChains()
 {
-	MSCloud es_cloud;
-
 	//==== Tessellate Chains ====//
 	list< ISegChain* >::iterator c;
 	for ( c = m_ISegChainList.begin() ; c != m_ISegChainList.end(); c++ )
 	{
-		(*c)->BuildCurves();
-
-		(*c)->TessEndPts();
-
-		(*c)->TransferTess();
-		(*c)->ApplyTess();
-
-		double t = (*c)->CalcDensity( &m_GridDensity );
-
-		double d = dist( (*c)->m_TessVec.front()->m_Pnt, (*c)->m_TessVec.back()->m_Pnt );
-		if ( d > 0.001 * t )
-		{
-			(*c)->BuildES( es_cloud, &m_GridDensity );
-		}
-	}
-
-	es_cloud.sort();
-
-	MSTree es_tree( 3, es_cloud, KDTreeSingleIndexAdaptorParams( 10 ) );
-	es_tree.buildIndex();
-
-	// Prune sources which have no effect because other nearby sources are smaller.
-	es_cloud.prune_map_sources( es_tree, &m_GridDensity );
-	es_tree.buildIndex();
-
-	// This loop is split due to the construction of the edge source vectors.
-	// They need to be complete before proceeding.
-
-	for ( c = m_ISegChainList.begin() ; c != m_ISegChainList.end(); c++ )
-	{
-		(*c)->Tessellate( es_tree, es_cloud, &m_GridDensity );
-
+		(*c)->Tessellate();
 		(*c)->TransferTess();
 		(*c)->ApplyTess();
 	}
-
-	for ( int i = 0 ; i < (int)m_SurfVec.size() ; i++ )
-	{
-		m_SurfVec[i]->LimitTargetMap( es_cloud, es_tree, minmap );
-	}
-
-	es_cloud.free_strengths();
 
 	////==== Check for Zero Length Chains ====//
 	//for ( c = m_ISegChainList.begin() ; c != m_ISegChainList.end(); c++ )
@@ -3215,7 +3273,8 @@ void CfdMeshMgr::Draw()
 		m_GridDensity.Draw(source);
 
 	//==== Draw Wake Lines ====//
-	m_WakeMgr.Draw();
+	if ( m_DrawSourceFlag )
+		m_WakeMgr.Draw();
 
 	if ( m_DrawMeshFlag )
 	{

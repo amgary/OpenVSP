@@ -49,7 +49,7 @@ class MainWinUI {open
               xywh {30 30 100 20}
             }
             MenuItem ExportMenu {
-              label {Export...} selected
+              label {Export...}
               xywh {40 40 100 20}
             }
             MenuItem TempDirMenu {
@@ -154,6 +154,10 @@ class MainWinUI {open
               label {Texture...}
               xywh {10 10 100 20}
             }
+            MenuItem ToggleAxisMenu {
+              label {Toggle Axis}
+              xywh {20 20 100 20}
+            }
           }
           Submenu GeomSubMenu {
             label Geom open
@@ -188,8 +192,12 @@ class MainWinUI {open
               xywh {0 0 100 20}
             }
             MenuItem ParmLinkMenu {
-              label {Link...}
+              label {Link...} selected
               xywh {10 10 100 20}
+            }
+            MenuItem ParmPickMenu {
+              label {Design Variables...}
+              xywh {20 20 100 20}
             }
           }
           Submenu ScriptSubMenu {
@@ -228,6 +236,10 @@ class MainWinUI {open
             }
             MenuItem ShowHelpWebsite {
               label {Online Help...}
+              xywh {10 10 100 20}
+            }
+            MenuItem KeyMouseHelpMenu {
+              label {Key and Mouse Commands...}
               xywh {10 10 100 20}
             }
           }

@@ -116,6 +116,7 @@ public:
    virtual void regenerate();
    virtual void write(xmlNodePtr node);
    virtual void read(xmlNodePtr node);
+   virtual void read(FILE* file_id) {Geom::read(file_id);}
  
    virtual void load_normals();
    virtual void load_hidden_surf();
@@ -145,8 +146,6 @@ public:
 
    virtual void xsec_trigger();
    virtual void gen_surf();
-   virtual void interpolate_from_file( float sup_fract, FuselageXSec * xsec0, FuselageXSec * xsec1, FuselageXSec * out );
-   virtual void interpolate_from_edit_crv( float sup_fract, FuselageXSec * xsec0, FuselageXSec * xsec1, FuselageXSec * out );
    
    virtual void comp_spine();
 

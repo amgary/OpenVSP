@@ -297,7 +297,7 @@ void WingSect::SetDriver(int driver_in)
 //==== Constructor =====//
 Ms_wing_geom::Ms_wing_geom(Aircraft* aptr) : Geom(aptr)
 {
-	sects.set_chunk_size( 256 );
+//	sects.set_chunk_size( 8 );
 	currSect = 0;
 	nextSect = 0;
 	highlightType = MSW_HIGHLIGHT_NONE;
@@ -317,7 +317,6 @@ Ms_wing_geom::Ms_wing_geom(Aircraft* aptr) : Geom(aptr)
 	sprintf( name, "Ms_Wing_%d", geomCnt ); 
 	geomCnt++;
 	name_str = Stringc(name);
-	id_str = name_str;				//jrg fix
 
 	copySect.rootAf = new Af( this );
 	copySect.rootAf->init_script("wing_foil");
@@ -379,15 +378,17 @@ void Ms_wing_geom::copy( Geom* fromGeom )
 	DeleteAllFoilsAndSects();
 
 	//==== Copy Sections and Airfoils  ====//
-	sects.init( g->sects.dimension() );
-
-	for ( i = 0 ; i < sects.dimension() ; i++ )
+//	sects.init( g->sects.dimension() );
+	sects.resize( g->sects.size() );
+//	for ( i = 0 ; i < sects.dimension() ; i++ )
+	for ( i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		sects[i] = g->sects[i];
 	}
 
 	//==== Load Airfoils ====//
-	for (  i = 0 ; i < sects.dimension() ; i++ )
+//	for (  i = 0 ; i < sects.dimension() ; i++ )
+	for (  i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		if ( i == 0 )
 		{
@@ -406,7 +407,8 @@ void Ms_wing_geom::copy( Geom* fromGeom )
 
 	}
 
-	for ( i = 0 ; i < sects.dimension() ; i++ )
+//	for ( i = 0 ; i < sects.dimension() ; i++ )
+	for ( i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		*(sects[i].tipAf) = *(g->sects[i].tipAf);
 		*(sects[i].rootAf) = *(g->sects[i].rootAf);
@@ -420,12 +422,13 @@ void Ms_wing_geom::copy( Geom* fromGeom )
 	set_num_pnts_all_afs();
 	generate();
 
-	for ( i = 0 ; i < sects.dimension() ; i++ )
+//	for ( i = 0 ; i < sects.dimension() ; i++ )
+	for ( i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		sects[i].SetGeomPtr( this );
 	}
 
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 }
 
 WingSect* Ms_wing_geom::getCurrWingSect()
@@ -447,7 +450,8 @@ void Ms_wing_geom::DeleteAllFoilsAndSects()
 	foils.init(0);
 
 	//==== Remove Parm Refs for Sects ====//
-	for ( i = 0 ; i < sects.dimension() ; i++ )
+//	for ( i = 0 ; i < sects.dimension() ; i++ )
+	for ( i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		RemoveWingSectParmReferences( i );
 	}
@@ -462,18 +466,22 @@ void Ms_wing_geom::define_parms()
   //==== Load Up Some Default Sections ====//
   WingSect ws;
   ws.Build( 4.0, 12.0, 21.0, 65.0, 0.0, 0.0, 0.0 );
-  sects.append( ws );
+//  sects.append( ws );
+  sects.push_back( ws );
 
   ws.Build( 7.0, 3.0, 12.0, 40.0, 15.0, 0.1, 0.5 );
-  sects.append( ws );
+//  sects.append( ws );
+  sects.push_back( ws );
 
   ws.Build( 2.0, 2.0, 3.0, 33.0, 45.0, 0.0, 0.0 );
-  sects.append( ws );
+//  sects.append( ws );
+  sects.push_back( ws );
 
   set_curr_sect( currSect );
  
 	//==== Load Airfoils ====//
-	for (  i = 0 ; i < sects.dimension() ; i++ )
+//	for (  i = 0 ; i < sects.dimension() ; i++ )
+	for (  i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		if ( i == 0 )
 		{
@@ -504,7 +512,8 @@ void Ms_wing_geom::define_parms()
   //==== Make Sure Root and Tip of Adjoining Sections Match ====//
   matchWingSects();	
 
-  int num_sects = sects.dimension();
+//  int num_sects = sects.dimension();
+  int num_sects = sects.size();
 
   set_num_pnts_all_afs();
 
@@ -519,7 +528,8 @@ void Ms_wing_geom::define_parms()
   double tc = 0.0;
   double tps = 0.0;
 
-  for ( i = 0 ; i < sects.dimension() ; i++ )
+//  for ( i = 0 ; i < sects.dimension() ; i++ )
+  for ( i = 0 ; i < (int)sects.size() ; i++ )
   {
     ta += sects[i].area_val();
     ts += sects[i].span_val();
@@ -535,7 +545,8 @@ void Ms_wing_geom::define_parms()
 		tps *= 2.0;
 	}
 
-  double ac = tc/(sects.dimension() * 2 );
+//  double ac = tc/(sects.dimension() * 2 );
+  double ac = tc/(double)(sects.size() * 2 );
   double ar = (ts*ts)/ta;
 
 //  double sps =  sects[currSect].span * fabs(cos( sects[currSect].dihedral *  DEG_2_RAD ));
@@ -575,7 +586,8 @@ void Ms_wing_geom::define_parms()
   max_num_segs.set_lower_upper( 2.0, 30.0 );
   max_num_segs.set_script("wing_dihed maxsegs", 1);
 
-  for ( i = 0 ; i < sects.dimension() ; i++ )
+//  for ( i = 0 ; i < sects.dimension() ; i++ )
+  for ( i = 0 ; i < (int)sects.size() ; i++ )
   {
 	sects[i].SetGeomPtr( this );
   }
@@ -597,7 +609,8 @@ void Ms_wing_geom::LoadLinkableParms( vector< Parm* > & parmVec )
 	Geom::AddLinkableParm( &total_aspect, parmVec, this, "Design" );
 
 	//==== Sections ====//
-	for ( i = 0 ; i < sects.dimension() ; i++ )
+//	for ( i = 0 ; i < sects.dimension() ; i++ )
+	for ( i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		sprintf( gname, "Sect_%d", i );
 		vector< Parm* > pVec = sects[i].GetLinkableParms();
@@ -609,7 +622,8 @@ void Ms_wing_geom::LoadLinkableParms( vector< Parm* > & parmVec )
 
 	//==== Airfoils ====//
 	vector< Af* > afVec;
-	for (  i = 0 ; i < sects.dimension() ; i++ )
+//	for ( i = 0 ; i < sects.dimension() ; i++ )
+	for ( i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		if ( i == 0 )	
 			afVec.push_back( sects[i].rootAf );
@@ -629,13 +643,14 @@ void Ms_wing_geom::LoadLinkableParms( vector< Parm* > & parmVec )
 
 void Ms_wing_geom::RemoveWingSectParmReferences( int sect_id )
 {
-	if ( sect_id < 0 || sect_id >= sects.dimension() )
+//	if ( sect_id < 0 || sect_id >= sects.dimension() )
+	if ( sect_id < 0 || sect_id >= (int)sects.size() )
 		return;
 
 	vector< Parm* > pVec = sects[sect_id].GetLinkableParms();
 	for ( int i = 0 ; i < (int)pVec.size() ; i++ )
 	{
-		parmLinkMgrPtr->RemoveParmReferences( pVec[i] );
+		parmMgrPtr->RemoveParmReferences( pVec[i] );
 	}
 }
 
@@ -644,7 +659,7 @@ void Ms_wing_geom::RemoveAirfoilParmReferences( Af* afPtr )
 	vector< Parm* > pVec = afPtr->GetLinkableParms();
 	for ( int i = 0 ; i < (int)pVec.size() ; i++ )
 	{
-		parmLinkMgrPtr->RemoveParmReferences( pVec[i] );
+		parmMgrPtr->RemoveParmReferences( pVec[i] );
 	}
 }
 
@@ -686,7 +701,8 @@ void Ms_wing_geom::resetScaleFactor()
 
 void Ms_wing_geom::computeCenter()
 {
-	if ( sects.dimension() >= 1 )
+//	if ( sects.dimension() >= 1 )
+	if ( sects.size() >= 1 )
 	{
 		//==== Set Rotation Center ====//
 		center.set_x( origin()*sects[0].rc_val()*scaleFactor() ); 
@@ -743,12 +759,14 @@ void Ms_wing_geom::parm_changed(Parm* p)
         {
   			//==== Compute Totals ====//
 			double ts = 0.0;
-  			for ( i = 0 ; i < sects.dimension() ; i++ )
+//  		for ( i = 0 ; i < sects.dimension() ; i++ )
+ 			for ( i = 0 ; i < (int)sects.size() ; i++ )
 				ts += sects[i].span_val();
 
   			//==== Compute Totals Proj Span ====//
 			double tps = 0.0;
-  			for ( i = 0 ; i < sects.dimension() ; i++ )
+//  		for ( i = 0 ; i < sects.dimension() ; i++ )
+ 			for ( i = 0 ; i < (int)sects.size() ; i++ )
 				tps += sects[i].span_val()* cos( get_sum_dihedral(i) * DEG_2_RAD );
 
 			if ( sym_code == XZ_SYM )
@@ -767,7 +785,8 @@ void Ms_wing_geom::parm_changed(Parm* p)
   			//==== Adjust Sections Total Span ====//
 			if ( fract > 0.0 )
 			{
-    			for (  i = 0 ; i < sects.dimension() ; i++ )
+//  			for ( i = 0 ; i < sects.dimension() ; i++ )
+ 				for ( i = 0 ; i < (int)sects.size() ; i++ )
     			{
       				int odriver = sects[i].driver;
       				int ndriver = MS_S_TC_RC;
@@ -791,7 +810,8 @@ void Ms_wing_geom::parm_changed(Parm* p)
   			//==== Compute Totals ====//
 			double ta = 0.0;
 
-  			for ( i = 0 ; i < sects.dimension() ; i++ )
+ //  		for ( i = 0 ; i < sects.dimension() ; i++ )
+ 			for ( i = 0 ; i < (int)sects.size() ; i++ )
 				ta += sects[i].area_val();
 
 			if ( sym_code == XZ_SYM )
@@ -805,7 +825,8 @@ void Ms_wing_geom::parm_changed(Parm* p)
   			{
     			double fract = total_area()/ta;
 
-    			for (  i = 0 ; i < sects.dimension() ; i++ )
+//  		for ( i = 0 ; i < sects.dimension() ; i++ )
+ 			for ( i = 0 ; i < (int)sects.size() ; i++ )
     			{
       				int odriver = sects[i].driver;
 					int ndriver = MS_AR_TR_A;
@@ -827,10 +848,12 @@ void Ms_wing_geom::parm_changed(Parm* p)
   			//==== Compute Totals ====//
 			double tc = 0.0;
 
-  			for ( i = 0 ; i < sects.dimension() ; i++ )
+//  		for ( i = 0 ; i < sects.dimension() ; i++ )
+ 			for ( i = 0 ; i < (int)sects.size() ; i++ )
 				tc += sects[i].tc_val() + sects[i].rc_val();
 
-			double ac = tc/(double)(sects.dimension() * 2 );
+//			double ac = tc/(double)(sects.dimension() * 2 );
+			double ac = tc/(double)(sects.size() * 2 );
 
   			//==== Adjust Sections Total Area ====//
  		    if ( fabs( ac - avg_chord()) > 0.001  )
@@ -840,7 +863,8 @@ void Ms_wing_geom::parm_changed(Parm* p)
 				if ( fract < 0.001f )
 				  fract = 0.001f;
 
-    			for (  i = 0 ; i < sects.dimension() ; i++ )
+//  			for ( i = 0 ; i < sects.dimension() ; i++ )
+ 				for ( i = 0 ; i < (int)sects.size() ; i++ )
     			{
       				int odriver = sects[i].driver;
 					int ndriver = MS_S_TC_RC;
@@ -890,7 +914,8 @@ void Ms_wing_geom::computeTotals()
 	double ta = 0.0;
 	double tc = 0.0;
 	double tps = 0.0;
-	for (int i = 0 ; i < sects.dimension() ; i++ )
+//  for ( i = 0 ; i < sects.dimension() ; i++ )
+ 	for ( int i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		ts += sects[i].span_val();
 		ta += sects[i].area_val();
@@ -914,7 +939,7 @@ void Ms_wing_geom::computeTotals()
   if ( fabs( total_area() - ta ) > 0.001 )
 		total_area = ta;
 
-	double ac = tc/(double)(sects.dimension() * 2 );
+	double ac = tc/(double)(sects.size() * 2 );
 
 	if ( fabs( avg_chord() - ac ) > 0.001 )
 		avg_chord = ac;
@@ -948,7 +973,7 @@ void Ms_wing_geom::matchWingSects()
     sects[i-1].driver = odriver;
   }
   //==== Start From Current Section and Work Out ====//
-  for ( i = currSect ; i < sects.dimension() - 1 ; i++ )
+  for ( i = currSect ; i < (int)sects.size() - 1 ; i++ )
   {
     int ndriver = MS_S_TC_RC;
     int odriver = sects[i+1].driver;
@@ -968,7 +993,8 @@ void Ms_wing_geom::matchWingSects()
 double Ms_wing_geom::get_cbar()
 {
 	double area_taper = 0.0;
-	for ( int i = 0 ; i < sects.dimension() ; i++ )
+//	for ( int i = 0 ; i < sects.dimension() ; i++ )
+	for ( int i = 0 ; i < (int)sects.size() ; i++ )
 		area_taper += sects[i].area_val()*sects[i].tr_val();
 
 	double avg_taper = area_taper/total_area();
@@ -1039,7 +1065,9 @@ void Ms_wing_geom::add_sect()
 	ws2.rootAf = midaf;
 
   sects[currSect] = ws1;
-  sects.insert_after_index( ws2, currSect );
+
+//  sects.insert_after_index( ws2, currSect );
+  sects.insert( sects.begin() + currSect + 1, ws2 );
 
   set_curr_sect( currSect );
 
@@ -1047,7 +1075,7 @@ void Ms_wing_geom::add_sect()
   generate();
 
   airPtr->geomMod( this );
-  parmLinkMgrPtr->RebuildAll();
+  parmMgrPtr->RebuildAll();
 
 }
 
@@ -1056,7 +1084,8 @@ void Ms_wing_geom::ins_sect()
 {
   WingSect ws = sects[currSect];
 
-  sects.insert_after_index( ws, currSect );
+//  sects.insert_after_index( ws, currSect );
+  sects.insert( sects.begin() + currSect + 1, ws );
 
   Af * foil = new Af(this);		
   foil->init_script("wing_foil");
@@ -1071,25 +1100,25 @@ void Ms_wing_geom::ins_sect()
   generate();
 
   airPtr->geomMod( this );
-  parmLinkMgrPtr->RebuildAll();
+  parmMgrPtr->RebuildAll();
 
 }
 
 //==== Delete Section ====//
 void Ms_wing_geom::del_sect()
 {
-  if ( sects.dimension() < 2 )
+  if ( sects.size() < 2 )
     return;
 
   RemoveWingSectParmReferences( currSect );
-  sects.del_index( currSect );
+  sects.erase (sects.begin()+currSect);
 
 	//==== Check If All Airfoils Are Still Referenced ====//
 	dyn_array< Af* > tmpfoils;
 	for ( int i = 0 ; i < foils.dimension() ; i++ )
 	{
 		int ref = 0;
-		for ( int j = 0 ; j < sects.dimension() ; j++ )
+		for ( int j = 0 ; j < (int)sects.size() ; j++ )
 		{
 			if ( sects[j].rootAf == foils[i] || sects[j].tipAf == foils[i] )
 				ref = 1;
@@ -1106,8 +1135,8 @@ void Ms_wing_geom::del_sect()
 	}
 	foils = tmpfoils;
 
-  if ( currSect >= sects.dimension() )
-    currSect = sects.dimension()-1;
+  if ( currSect >= (int)sects.size() )
+    currSect = (int)sects.size()-1;
 
   set_curr_sect( currSect );
   set_depend_parms();
@@ -1115,7 +1144,7 @@ void Ms_wing_geom::del_sect()
 
   airPtr->geomMod( this );
 
-  parmLinkMgrPtr->RebuildAll();
+  parmMgrPtr->RebuildAll();
 
 
 }
@@ -1153,7 +1182,7 @@ void Ms_wing_geom::paste_sect()
 	generate();
   
 	airPtr->geomMod( this );
-    parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 }
 
@@ -1161,14 +1190,13 @@ void Ms_wing_geom::scale()
 {
 	double current_factor = scaleFactor()*(1.0/lastScaleFactor);
 
-	for (  int i = 0 ; i < sects.dimension() ; i++ )
+//	for (  int i = 0 ; i < sects.dimension() ; i++ )
+	for ( int i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		int odriver = sects[i].driver;
 		int ndriver = MS_S_TC_RC;
 		sects[i].driver = ndriver;
-		if ( i == 0 )
-			sects[i].rc_set(sects[i].rc_val() * current_factor);
-
+		sects[i].rc_set( sects[i].rc_val() * current_factor );
 		sects[i].tc_set( sects[i].tc_val() * current_factor );
 		sects[i].span_set( sects[i].span_val() * current_factor );
 		sects[i].fillDependData();
@@ -1228,7 +1256,7 @@ void Ms_wing_geom::write(xmlNodePtr root)
   xmlAddIntNode( mswing_node, "Rel_Twist_Flag", get_rel_twist_flag() );
   xmlAddIntNode( mswing_node, "Round_End_Cap_Flag", get_round_end_cap_flag() );
 
-  int nsect = sects.dimension();
+  int nsect = sects.size();
 
   //===== Write Airfoils =====//
   xmlNodePtr af_node;
@@ -1339,8 +1367,7 @@ void Ms_wing_geom::read(xmlNodePtr root)
     int num_sec =  xmlGetNumNames( sec_list_node, "Section" );
     assert( num_sec+1 == foils.dimension() );
 
-    dyn_array<WingSect> tmpsects;
-	tmpsects.set_chunk_size( 256 );
+    deque<WingSect> tmpsects;
 
     for ( i = 0 ; i < num_sec ; i++ )
     {
@@ -1374,7 +1401,7 @@ void Ms_wing_geom::read(xmlNodePtr root)
       ws.rootAf = foils[i];
       ws.tipAf  = foils[i+1];
 
-      tmpsects.append( ws );
+      tmpsects.push_back( ws );
     }
     sects = tmpsects;
   }
@@ -1383,7 +1410,7 @@ void Ms_wing_geom::read(xmlNodePtr root)
   set_curr_sect( 0 );
   set_depend_parms();
   generate();
-  parmLinkMgrPtr->RebuildAll();
+  parmMgrPtr->RebuildAll();
 
   feaMeshMgrPtr->SetFeaStructData( this, root );
 
@@ -1434,8 +1461,7 @@ void Ms_wing_geom::read(FILE* file_id)
   foils = tmpfoils;
 
 	//==== Load Sections ====//
-  dyn_array<WingSect> tmpsects;
-  tmpsects.set_chunk_size( 256 );
+  deque<WingSect> tmpsects;
 
 	for ( i = 0 ; i < nsects ; i++ )
   {
@@ -1464,7 +1490,7 @@ void Ms_wing_geom::read(FILE* file_id)
 
 
 
-    tmpsects.append( ws );
+    tmpsects.push_back( ws );
   }
   sects = tmpsects;
 
@@ -1768,7 +1794,8 @@ void Ms_wing_geom::set_depend_parms()
   double ta = 0.0;
   double tc = 0.0;
   double tps = 0.0;
-  for (int i = 0 ; i < sects.dimension() ; i++ )
+//  for (int i = 0 ; i < sects.dimension() ; i++ )
+  for ( int i = 0 ; i < (int)sects.size() ; i++ )
   {
 		ts += sects[i].span_val();
 		ta += sects[i].area_val();
@@ -1787,7 +1814,7 @@ void Ms_wing_geom::set_depend_parms()
   total_span = ts;
 	total_proj_span = tps;
   total_area = ta;
-	avg_chord = tc/(double)(sects.dimension() * 2 );
+	avg_chord = tc/(double)(sects.size() * 2 );
 	total_aspect =  (total_span()*total_span())/total_area();
 
 	sect_proj_span = sects[currSect].span_val() * fabs(cos( get_sum_dihedral(currSect) *  DEG_2_RAD ));
@@ -1830,7 +1857,7 @@ void Ms_wing_geom::set_rel_dihedral_flag(bool flag )
 //==== Get Sum Dihedral ====//
 double Ms_wing_geom::get_sum_dihedral( int sect_id )
 {
-	if ( sect_id < 0 || sect_id >= sects.dimension() )
+	if ( sect_id < 0 || sect_id >= (int)sects.size() )
 		return 0.0;
 
 	if ( rel_dihedral_flag == false )
@@ -1860,7 +1887,8 @@ void Ms_wing_geom::set_num_interp( int n )
 //==== Inc Number Of Interp Cross Sections - All Sects ====//
 void Ms_wing_geom::inc_all_interp()
 {
-	for ( int i = 0 ; i < sects.dimension() ; i++ )
+//	for ( int i = 0 ; i < sects.dimension() ; i++ )
+	for ( int i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		sects[i].num_interp_xsecs++;
 	}
@@ -1870,14 +1898,15 @@ void Ms_wing_geom::inc_all_interp()
 //==== Dec Number Of Interp Cross Sections - All Sects ====//
 void Ms_wing_geom::dec_all_interp()
 {
-	int i;
-	for ( i = 0 ; i < sects.dimension() ; i++ )
+//	for ( i = 0 ; i < sects.dimension() ; i++ )
+	for ( int i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		if ( sects[i].num_interp_xsecs <= 0 )
 			return;
 	}
 
-	for ( i = 0 ; i < sects.dimension() ; i++ )
+//	for ( i = 0 ; i < sects.dimension() ; i++ )
+	for ( int i = 0 ; i < (int)sects.size() ; i++ )
 		sects[i].num_interp_xsecs--;
 
 	generate();
@@ -1886,7 +1915,7 @@ void Ms_wing_geom::dec_all_interp()
 //==== Set Joint Index ====//
 void Ms_wing_geom::set_curr_joint( int cj )
 {
-	if ( cj > 0 && cj == sects.dimension()-1 )
+	if ( cj > 0 && cj == (int)sects.size()-1 )
 		set_curr_sect(cj-1);
 	else
 		set_curr_sect(cj);
@@ -1895,7 +1924,7 @@ void Ms_wing_geom::set_curr_joint( int cj )
 //==== Get Joint Index ====//
 int Ms_wing_geom::get_curr_joint()
 {
-	if ( currSect > 0 && currSect == sects.dimension()-1 )
+	if ( currSect > 0 && currSect == (int)sects.size()-1 )
 		return currSect-1;
 
 	return currSect;
@@ -1904,14 +1933,14 @@ int Ms_wing_geom::get_curr_joint()
 //==== Set Foil Index ====//
 void Ms_wing_geom::set_curr_foil( int cf )
 {
-	if ( cf < sects.dimension() )
+	if ( cf < (int)sects.size() )
 	{
 		set_curr_sect(cf);
 		set_root_active();
 	}
 	else
 	{
-		set_curr_sect(sects.dimension()-1);
+		set_curr_sect((int)sects.size()-1);
 		set_tip_active();
 	}
 }
@@ -1919,7 +1948,7 @@ void Ms_wing_geom::set_curr_foil( int cf )
 //==== Get Foil Index  ====//
 int Ms_wing_geom::get_curr_foil()
 {
-	if ( !get_root_active() && currSect == sects.dimension()-1 )
+	if ( !get_root_active() && currSect == (int)sects.size()-1 )
 		return currSect+1;
 		
 	return currSect;
@@ -1928,10 +1957,10 @@ int Ms_wing_geom::get_curr_foil()
 //==== Sect Section Index ====//
 void Ms_wing_geom::set_curr_sect(int cs)
 {
-  if ( cs >= 0 && cs < sects.dimension() )
+  if ( cs >= 0 && cs < (int)sects.size() )
     currSect = cs;
 
-  if ( currSect < sects.dimension()-1 )
+  if ( currSect < (int)sects.size()-1 )
 	  nextSect = currSect+1;
   else
 	  nextSect = currSect;
@@ -2205,7 +2234,7 @@ void Ms_wing_geom::loadWingPnts( dyn_array< WingPnt > & wingPnts )
 
   //==== Load End Points for Each Section ====//
   double total_twist = 0.0;
-  for ( i = 0 ; i < sects.dimension() ; i++ )
+  for ( i = 0 ; i < (int)sects.size() ; i++ )
   {
 	double rad = sects[i].span_val();
 //    if ( get_sym_code() == XZ_SYM )  rad *= 0.5;   // Check Sym Code
@@ -2245,7 +2274,7 @@ void Ms_wing_geom::loadWingPnts( dyn_array< WingPnt > & wingPnts )
 	wp.dihedRot = 0.0;
 	if ( sects[i].dihedRotFlag )
 	{
-		if ( i < sects.dimension()-1 )
+		if ( i < (int)sects.size()-1 )
 			wp.dihedRot = -0.5*(get_sum_dihedral(i) + get_sum_dihedral(i+1));
 //			wp.dihedRot = -0.5*(sects[i].dihedral + sects[i+1].dihedral);
 		else
@@ -2497,7 +2526,7 @@ void Ms_wing_geom::generate_surf()
 	base_surf.set_num_xsecs( num_xs );
 
 	//==== Clear Section Count ====//
-	for ( i = 0 ; i < sects.dimension() ; i++ )
+	for ( i = 0 ; i < (int)sects.size() ; i++ )
 		sects[i].num_xsecs = 0;
 
 	//==== Load In Airfoils and Endcaps ====//
@@ -2648,7 +2677,7 @@ void Ms_wing_geom::generate_surf()
 		}
 	}
 
-	for ( i = 0 ; i < sects.dimension() ; i++ )
+	for ( i = 0 ; i < (int)sects.size() ; i++ )
 		sects[i].num_actual_xsecs = sects[i].num_xsecs;
 
 	//==== What u Vals to Interpolate ====//
@@ -2664,8 +2693,8 @@ void Ms_wing_geom::generate_surf()
 
 		int num_interp = sects[sid].num_interp_xsecs;
 
-		if ( wingPnts[ix-1].blendFlag && wingPnts[ix].blendFlag )
-			num_interp = 0;
+		//if ( wingPnts[ix-1].blendFlag && wingPnts[ix].blendFlag )
+		//	num_interp = 0;
 
 		sects[sid].num_actual_xsecs += num_interp;
 
@@ -3168,7 +3197,7 @@ void Ms_wing_geom::loadWingStrakeGeom( WingGeom* wg )
 	vector< WingSect > wsVec;
 	double rootXOff = wg->loadMSWingSectVec( wsVec );
 
-	if ( sects.dimension() != wsVec.size() || wsVec.size() != 3 )		//jrg should do better
+	if ( ( sects.size() != wsVec.size() ) || wsVec.size() != 3 )		//jrg should do better
 		return;
 
 	this->copy( wg );
@@ -3406,7 +3435,7 @@ void Ms_wing_geom::LoadDragFactors( DragFactors& drag_factors )
 	double avg_sweep = 0.0;
 
 	double total_area = 1.0e-12;
-	for ( int i = 0 ; i < sects.dimension() ; i++ )
+	for ( int i = 0 ; i < (int)sects.size() ; i++ )
 	{
 		double rc = sects[i].get_rc()->get();
 		double tc = sects[i].get_tc()->get();

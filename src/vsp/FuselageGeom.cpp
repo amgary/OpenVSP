@@ -101,8 +101,11 @@ FuselageGeom::FuselageGeom(Aircraft* aptr) : Geom(aptr)
 //==== Destructor =====//
 FuselageGeom::~FuselageGeom()
 {
-	for ( int i = 0 ; i < (int)xsecVec.size() ; i++ )
-		delete xsecVec[i];
+//	Commenting out these lines creates a memory leak.
+//	However, it also fixes a mysterious bug where parameters would occasionally
+//	take the wrong value.
+//	for ( int i = 0 ; i < (int)xsecVec.size() ; i++ )
+//		delete xsecVec[i];
 
 }
 void FuselageGeom::LoadLinkableParms( vector< Parm* > & parmVec )
@@ -145,32 +148,32 @@ void FuselageGeom::LoadLinkableParms( vector< Parm* > & parmVec )
 
 void FuselageGeom::RemoveXSecParmReferences( FuselageXSec* xsec )
 {
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_height() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_width() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_max_width_loc() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_corner_rad() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_top_tan_angle() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_bot_tan_angle() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_top_str() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_upp_str() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_bot_str() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_low_str() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_y_offset() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_z_offset() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->get_location() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_height() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_width() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_max_width_loc() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_corner_rad() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_top_tan_angle() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_bot_tan_angle() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_top_str() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_upp_str() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_bot_str() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_low_str() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_y_offset() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_z_offset() );
+	parmMgrPtr->RemoveParmReferences( xsec->get_location() );
 
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getTopTanAng() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getTopTanStr1() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getTopTanStr2() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getBotTanAng() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getBotTanStr1() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getBotTanStr2() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getLeftTanAng() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getLeftTanStr1() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getLeftTanStr2() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getRightTanAng() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getRightTanStr1() );
-	parmLinkMgrPtr->RemoveParmReferences( xsec->getRightTanStr2() );
+	parmMgrPtr->RemoveParmReferences( xsec->getTopTanAng() );
+	parmMgrPtr->RemoveParmReferences( xsec->getTopTanStr1() );
+	parmMgrPtr->RemoveParmReferences( xsec->getTopTanStr2() );
+	parmMgrPtr->RemoveParmReferences( xsec->getBotTanAng() );
+	parmMgrPtr->RemoveParmReferences( xsec->getBotTanStr1() );
+	parmMgrPtr->RemoveParmReferences( xsec->getBotTanStr2() );
+	parmMgrPtr->RemoveParmReferences( xsec->getLeftTanAng() );
+	parmMgrPtr->RemoveParmReferences( xsec->getLeftTanStr1() );
+	parmMgrPtr->RemoveParmReferences( xsec->getLeftTanStr2() );
+	parmMgrPtr->RemoveParmReferences( xsec->getRightTanAng() );
+	parmMgrPtr->RemoveParmReferences( xsec->getRightTanStr1() );
+	parmMgrPtr->RemoveParmReferences( xsec->getRightTanStr2() );
 
 }
 
@@ -251,7 +254,7 @@ void FuselageGeom::copy( Geom* fromGeom )
 
 	set_num_pnts( numPnts.iget() );
 
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 }
 
@@ -500,7 +503,7 @@ void FuselageGeom::read(xmlNodePtr root)
   set_pnt_space_type( space_type );
   generate();
 
-  parmLinkMgrPtr->RebuildAll();
+  parmMgrPtr->RebuildAll();
 
 }
 
@@ -519,45 +522,6 @@ void FuselageGeom::comp_spine()
       vec3d sp_pnt = spine.comp_pnt_per_length( (float)loc );
       xsecVec[i]->set_pnt_on_spine(sp_pnt);
   } 
-}
-
-//==== Interpolate Xsecs That are From Files =====//
-void FuselageGeom::interpolate_from_file
-			( float sup_fract, FuselageXSec* xsec0, FuselageXSec* xsec1, FuselageXSec* out )
-{
-  if ( xsec0->get_type() == XSEC_POINT )
-  {
-    out->set_type( FROM_FILE );
-    out->set_file_crv( xsec1->get_file_crv() );
-  }
-  else if ( xsec0->get_type() == FROM_FILE &&  xsec1->get_type() == FROM_FILE )
-  {
-    out->set_type( FROM_FILE );
-    out->interp_file_crv( sup_fract, xsec0->get_file_crv(), xsec1->get_file_crv() );
-  }
-}
-
-//==== Interpolate Xsecs That are From Edit Crvs =====//
-void FuselageGeom::interpolate_from_edit_crv
-			( float sup_fract, FuselageXSec* xsec0, FuselageXSec* xsec1, FuselageXSec* out )
-{
-  if ( xsec0->get_type() == XSEC_POINT )
-  {
-
-    out->setEditCrv( xsec1->getEditCrv() );
-	double w = xsec1->getEditCrv()->getMaxWidth()->get();
-	double h = xsec1->getEditCrv()->getMaxHeight()->get();
-	out->getEditCrv()->scaleWH( w*sup_fract, h*sup_fract ); 
-    out->set_type( EDIT_CRV );
-	out->getEditCrv()->generate();
-  }
-  else if ( xsec0->get_type() == EDIT_CRV &&  xsec1->get_type() == EDIT_CRV )
-  {
-	out->getEditCrv()->blend( sup_fract, xsec0->getEditCrv(),xsec1->getEditCrv() );
-
-    out->set_type( EDIT_CRV );
- 	out->getEditCrv()->generate();
- }
 }
 
 //==== Cross Section Has Changed Regen Surf =====//
@@ -762,7 +726,7 @@ FuselageXSec* FuselageGeom::add_xsec(FuselageXSec* curr_xsec)
 
 	this->generate();
 
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 	return curr_xsec;
 }
@@ -801,7 +765,7 @@ FuselageXSec* FuselageGeom::delete_xsec(FuselageXSec* curr_xsec)
 
 	this->generate();
 
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 	return curr_xsec;
 }
@@ -1857,7 +1821,10 @@ void FuselageGeom::write_bezier_file( int id, FILE* file_id )
 			ang = angle( p01, p21 );
 
 		if ( ang < 100.0*DEG_2_RAD )
+		{
+
 			uSharpVec.push_back( i );
+		}
 	}
 
 
@@ -2046,7 +2013,7 @@ void FuselageGeom::draw2D(vec2d & cursor)
 			double h = xsecVec[curr_xsec_num]->get_height()->get();
 			xsecVec[curr_xsec_num]->get_height()->set((h+moveZ));
 
-			if ( xsecVec[curr_xsec_num]->get_type() == EDIT_CRV )
+			if ( xsecVec[curr_xsec_num]->get_type() == FXS_EDIT_CRV )
 			{
 				EditCurve* ec =  xsecVec[curr_xsec_num]->getEditCrv();
 				double mh = ec->getMaxHeight()->get();
@@ -2073,7 +2040,7 @@ void FuselageGeom::draw2D(vec2d & cursor)
 			double h = xsecVec[curr_xsec_num]->get_height()->get();
 			xsecVec[curr_xsec_num]->get_height()->set((h-moveZ));
 
-			if ( xsecVec[curr_xsec_num]->get_type() == EDIT_CRV )
+			if ( xsecVec[curr_xsec_num]->get_type() == FXS_EDIT_CRV )
 			{
 				EditCurve* ec =  xsecVec[curr_xsec_num]->getEditCrv();
 				double mh = ec->getMaxHeight()->get();
@@ -2101,7 +2068,7 @@ void FuselageGeom::draw2D(vec2d & cursor)
 			double w = xsecVec[curr_xsec_num]->get_width()->get();
 			xsecVec[curr_xsec_num]->get_width()->set((w+moveY));
 
-			if ( xsecVec[curr_xsec_num]->get_type() == EDIT_CRV )
+			if ( xsecVec[curr_xsec_num]->get_type() == FXS_EDIT_CRV )
 			{
 				EditCurve* ec =  xsecVec[curr_xsec_num]->getEditCrv();
 				double mw = ec->getMaxWidth()->get();

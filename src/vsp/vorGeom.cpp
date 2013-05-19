@@ -1244,7 +1244,8 @@ void VorGeom::readVorlaxOut( int* isurf, int* icalc, double* delta, int* stab )
 	FILE* fp = fopen("fromVorlax.txt","r");
 	if (fp)
 	{
-		fscanf(fp, "%d %d %d %d %f %d %d \n", isurf, icalc, &idum, &idum, delta, &idum, stab );
+		fscanf(fp, "%d %d %d %d %lf %d %d \n", isurf, icalc, &idum, &idum, delta, &idum, stab );
+
 		fclose(fp);
 	}
 }
@@ -1497,4 +1498,24 @@ void VorGeom::setCsfSym( int val )
 	{
 		vorSlicePtr->Vor->csfsymmetry[curr_csf] = val;
 	}
+}
+
+bool VorGeom::vorlaxExeExists()
+{
+#ifdef WIN32
+	FILE* fp = fopen("vorlaxWin.exe","r");
+#else
+	#ifdef __APPLE__
+	FILE* fp = fopen("./vorlaxMac","r");
+	#else
+	FILE* fp = fopen("./vorlaxLinux","r");
+	#endif
+#endif
+
+	if ( fp )
+	{
+		fclose(fp);
+		return true;
+	}
+	return false;
 }
