@@ -1169,23 +1169,7 @@ void PHolderListMgr::ReadPHolderListXDDM( char *newfile )
 
 		if ( var_node )
 		{
-			Stringc varname = Stringc( xmlFindPropString( var_node, "VSPVarName", " " ) );
-
-			int istart = 0;
-			int iend = varname.search_for_substring(':');
-			int id = varname.get_range( istart, iend-1 ).convert_to_integer();
-
-			istart = iend + 1;
-			iend = varname.search_for_substring( istart, ':' );
-			istart = iend + 1;
-			iend = varname.search_for_substring( istart, ':' );
-			Stringc group = varname.get_range( istart, iend-1 );
-
-			istart = iend + 1;
-			iend = varname.get_length();
-			Stringc parm = varname.get_range( istart, iend-1 );
-
-			Parm* p = parmMgrPtr->FindParm( gVec, id, group, parm );
+			Parm* p = pHolderListMgrPtr->ParseVarname( var_node, gVec );
 
 			if ( p )
 			{
@@ -1214,6 +1198,28 @@ void PHolderListMgr::ReadPHolderListXDDM( char *newfile )
 	xmlFreeDoc( doc );
 
 //			return 1;
+}
+
+Parm* PHolderListMgr::ParseVarname( xmlNodePtr var_node, vector< Geom* > gVec )
+{
+	Stringc varname = Stringc( xmlFindPropString( var_node, "VSPVarName", " " ) );
+
+	int istart = 0;
+	int iend = varname.search_for_substring(':');
+	int id = varname.get_range( istart, iend-1 ).convert_to_integer();
+
+	istart = iend + 1;
+	iend = varname.search_for_substring( istart, ':' );
+	istart = iend + 1;
+	iend = varname.search_for_substring( istart, ':' );
+	Stringc group = varname.get_range( istart, iend-1 );
+
+	istart = iend + 1;
+	iend = varname.get_length();
+	Stringc parm = varname.get_range( istart, iend-1 );
+
+	Parm* p = parmMgrPtr->FindParm( gVec, id, group, parm );
+	return p;
 }
 
 void PHolderListMgr::RemoveAllReferencesPHolderList( Geom* geomPtr )

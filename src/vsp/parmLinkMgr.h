@@ -267,6 +267,7 @@ public:
 
 	virtual void WritePHolderListXDDM( char *newfile );
 	virtual void ReadPHolderListXDDM( char *newfile );
+	virtual Parm* PHolderListMgr::ParseVarname( xmlNodePtr var_node, vector< Geom* > gVec );
 
 	virtual void SetAircraftPtr( Aircraft* aptr )			{ aircraftPtr = aptr; }
 
