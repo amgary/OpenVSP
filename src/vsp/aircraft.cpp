@@ -1777,9 +1777,12 @@ void Aircraft::writeX3DViewpoints( xmlNodePtr node)
 	//==== Update box and get key values ====//
 	update_bbox();
 	vec3d center = bnd_box.get_center();
+	double max_dim = bnd_box.get_largest_dim()*1.25;
+	vec3d maxs = bnd_box.get_pnt(7);
+	vec3d mins = bnd_box.get_pnt(0);
 	double len = bnd_box.diag_dist();
-	double fov = .4;
-	double dist = len/(2 * tan(fov/2));
+	double fov = max_dim/2;
+	double dist = len;
 	
 	// Set the names and vectors to the different viewpoints //
 	string x3d_views[] = {"iso","front", "top", "right"};  // To add more views, add name to "x3d_views" and vector to viewpoint and rotation about that vector to "view_degree" //
@@ -1816,8 +1819,9 @@ void Aircraft::writeX3DViewpoints( xmlNodePtr node)
 		double4vec2str( orient , orients);
 		doublevec2str( cent, cents );
 		doublevec2str( posit, posits);
+		sprintf( sfov,"%lf, %lf, %lf, %lf", fov*-1, fov*-1, fov, fov);
+		sfov.concatenate("\0");
 		name = x3d_views[i].c_str();
-		sprintf(sfov, "%f", fov);
 		orients.concatenate("\0");
 		cents.concatenate("\0");
 		posits.concatenate("\0");
@@ -1825,12 +1829,12 @@ void Aircraft::writeX3DViewpoints( xmlNodePtr node)
 		// write first viewpoint twice so viewpoint buttons will work correctly //
 		if (name == x3d_views[0].c_str())
 		{
-			xmlNodePtr first_view_node = xmlNewChild( node, NULL, (const xmlChar *)"Viewpoint", (const xmlChar *)" ");
+			xmlNodePtr first_view_node = xmlNewChild( node, NULL, (const xmlChar *)"OrthoViewpoint", (const xmlChar *)" ");
 			writeViewpointsProps(first_view_node, orients, cents, posits, sfov, "first");
 		}
 
 		// write each viewpoint node's properties //
-		xmlNodePtr viewpoint_node = xmlNewChild( node, NULL, (const xmlChar *)"Viewpoint", (const xmlChar *)" ");
+		xmlNodePtr viewpoint_node = xmlNewChild( node, NULL, (const xmlChar *)"OrthoViewpoint", (const xmlChar *)" ");
 		writeViewpointsProps(viewpoint_node, orients, cents, posits, sfov, name);
 
 	}
