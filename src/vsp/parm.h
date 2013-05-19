@@ -26,6 +26,7 @@ using namespace std;			//jrg windows??
 
 #define XDDM_VAR 0
 #define XDDM_CONST 1
+#define XDDM_ANALY 2
 
 class Gui_device;
 class GeomBase;

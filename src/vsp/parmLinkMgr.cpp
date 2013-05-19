@@ -10,6 +10,7 @@
 #include "parmLinkMgr.h"
 #include "parmLinkScreen.h"
 #include "parmPickerScreen.h"
+#include <iostream>
 
 #include "geom.h"
 #include "aircraft.h"
@@ -1161,7 +1162,14 @@ void PHolderListMgr::ReadPHolderListXDDM( char *newfile )
 		vlist.push_back( cst_node );
 	}
 
-	int num_tot = num_v + num_c;
+	int num_a = xmlGetNumNames( root, "Analysis" );
+	for (int i = 0 ; i < num_a ; i++ )
+	{
+		xmlNodePtr aly_node = xmlGetNode( root, "Analysis", i );
+		vlist.push_back( aly_node );
+	}
+
+	int num_tot = num_v + num_c + num_a;
 
 	for ( int i = 0 ; i < num_tot ; i++ )
 	{
@@ -1175,16 +1183,23 @@ void PHolderListMgr::ReadPHolderListXDDM( char *newfile )
 			{
 				double val = xmlFindPropDouble( var_node, "Value", p->get() );
 
-				p->set( val );
-				p->get_geom()->parm_changed( p );
+				const xmlChar* varstr = (xmlChar*) "Variable";
+				const xmlChar* analystr = (xmlChar*) "Analysis";
+
+				if( xmlStrcmp(var_node->name, analystr ) )
+				{					
+					p->set( val );
+					p->get_geom()->parm_changed( p );
+					cout << "Does not think paramater is an analysis command";
+				}
 
 				ParmHolder* ph = new ParmHolder();
 				ph->setParm( p );
 
-				const xmlChar* varstr = (xmlChar*) "Variable";
-
 				if( !xmlStrcmp(var_node->name, varstr ) )
 					ph->setDesType( XDDM_VAR );
+				else if( !xmlStrcmp(var_node->name, analystr ) )
+					ph->setDesType( XDDM_ANALY );
 				else
 					ph->setDesType( XDDM_CONST );
 
