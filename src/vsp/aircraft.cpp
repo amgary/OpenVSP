@@ -2610,7 +2610,37 @@ Geom* Aircraft::comp_geom(int sliceFlag, int meshFlag, int halfFlag )
 			newGeom->sliceX(sliceFlag);
 		else
 			newGeom->intersectTrim(meshFlag, halfFlag);
-				
+
+	//==== Update Comp Geom Area and Volume Parameters for Each Component ==== //
+
+		//==== Count Components ====//
+		vector< int > compIdVec;
+		for ( i = 0 ; i < (int)newGeom->tMeshVec.size() ; i++ )
+		{
+			if ( !(newGeom->tMeshVec[i])->halfBoxFlag )
+			{
+				int id = (newGeom->tMeshVec[i])->ptr_id;
+				vector<int>::iterator iter;
+
+				iter = find(compIdVec.begin(), compIdVec.end(), id );
+
+				if ( iter == compIdVec.end() )
+					compIdVec.push_back( id );
+			}
+		}
+		//==== Load TMeshs Into Component Based Groups ====//
+		vector < vector< TMesh* > > tMeshCompVec;
+		for ( i = 0 ; i < (int)compIdVec.size() ; i++ )
+		{
+			vector<TMesh*> cidVec;
+			for ( j = 0 ; j < (int)(newGeom->tMeshVec.size()) ; j++ )
+			{
+				if ( compIdVec[i] == (newGeom->tMeshVec[j])->ptr_id )
+					cidVec.push_back( newGeom->tMeshVec[j] );
+			}
+			tMeshCompVec.push_back( cidVec );
+		}
+
 		for (i = 0 ; i <(int)geomVec.size() ; i++ )
 		{
 
@@ -2626,19 +2656,19 @@ Geom* Aircraft::comp_geom(int sliceFlag, int meshFlag, int halfFlag )
 
 				if ( p )
 				{
-					for (k = 0 ; k <(int)newGeom->tMeshVec.size() ; k++ )
+					for (k = 0 ; k <(int)tMeshCompVec.size() ; k++ )
 					{
 
-						if ( ((Geom*)p->get_geom_base())->getPtrID() == (newGeom->tMeshVec[k])->ptr_id )
+						if ( ((Geom*)p->get_geom_base())->getPtrID() == tMeshCompVec[k][0]->ptr_id )
 						{
 							if ( j == 0 )
-								p->set( (newGeom->tMeshVec[k])->theoArea );
+								p->set( tMeshCompVec[k][0]->theoArea );
 							if ( j == 1 )
-								p->set( (newGeom->tMeshVec[k])->wetArea );
+								p->set( tMeshCompVec[k][0]->wetArea );
 							if ( j == 2 )
-								p->set( (newGeom->tMeshVec[k])->theoVol );
+								p->set( tMeshCompVec[k][0]->theoVol );
 							if ( j == 3 )
-								p->set( (newGeom->tMeshVec[k])->wetVol );
+								p->set( tMeshCompVec[k][0]->wetVol );
 
 							p->get_geom()->parm_changed( p );
 						}
@@ -2646,6 +2676,8 @@ Geom* Aircraft::comp_geom(int sliceFlag, int meshFlag, int halfFlag )
 				}
 			}
 		}
+
+		// ============///
 
 		addGeom( newGeom );
 		newGeom->setRedFlag(1);
