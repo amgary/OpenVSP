@@ -2604,14 +2604,36 @@ Geom* Aircraft::comp_geom(int sliceFlag, int meshFlag, int halfFlag )
 		if (screenMgr) screenMgr->hideGeomScreens();
 
 		setActiveGeom(NULL);
-
-		addGeom( newGeom );
+			
 
 		if ( sliceFlag )
 			newGeom->sliceX(sliceFlag);
 		else
 			newGeom->intersectTrim(meshFlag, halfFlag);
+				
+		for (i = 0 ; i <(int)geomVec.size() ; i++ )
+		{
+			cout << geomVec[i]->getPtrID();
+			Parm* p = parmMgrPtr->FindParm( geomVec, geomVec[i]->getPtrID(), (Stringc)"Design", (Stringc)"Theo_Area" );
+			if ( p )
+			{
+				for (i = 0 ; i <(int)newGeom->tMeshVec.size() ; i++ )
+				{
+					cout << (newGeom->tMeshVec[i])->theoArea;
+					cout << '\n';
+					cout << (newGeom->tMeshVec[i])->ptr_id;
+					cout << '\n';
 
+					if ( ((Geom*)p->get_geom_base())->getPtrID() == (newGeom->tMeshVec[i])->ptr_id )
+					{
+						p->set( (newGeom->tMeshVec[i])->theoArea );
+						p->get_geom()->parm_changed( p );
+					}
+				}
+			}
+		}
+
+		addGeom( newGeom );
 		newGeom->setRedFlag(1);
 
 		modifyGeom( newGeom );

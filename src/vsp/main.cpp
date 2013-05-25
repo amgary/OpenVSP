@@ -432,6 +432,12 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 			}
 
 			Geom* geom = airPtr->comp_geom(0);
+
+			// if xddm has been requested rewrite xddm file after comp geom in case analysis of volumes and areas is requested
+			if ( xddmFlag )
+			{
+				pHolderListMgrPtr->ReadPHolderListXDDM( xddmFile.get_char_star() );
+			}
 		}
 		if ( meshFlag )
 		{
