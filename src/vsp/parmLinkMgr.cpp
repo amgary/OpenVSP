@@ -10,7 +10,6 @@
 #include "parmLinkMgr.h"
 #include "parmLinkScreen.h"
 #include "parmPickerScreen.h"
-#include <iostream>
 
 #include "geom.h"
 #include "aircraft.h"
@@ -1102,8 +1101,19 @@ void PHolderListMgr::WritePHolderListXDDM( char *newfile )
 
 		if( m_PHolderVec[i]->getDesType() == XDDM_VAR )
 			var_node = xmlNewChild( model_node, NULL, (const xmlChar *)"Variable", NULL );
-		else
+		else if( m_PHolderVec[i]->getDesType() == XDDM_CONST )
 			var_node = xmlNewChild( model_node, NULL, (const xmlChar *)"Constant", NULL );
+		else
+		{
+			var_node = xmlNewChild( model_node, NULL, (const xmlChar *)"Analysis", NULL );
+			cout << p->get_group_name();
+			cout << p->get_name();
+			cout << '\n';
+			if ( !strcmp( p->get_name() , "Volume") )
+			{
+				cout << "Volume Analysis Requested\n";
+			}
+		}
 
 		char varname[255];
 		sprintf( varname, "%d:%s:%s:%s", ((Geom*)p->get_geom_base())->getPtrID(), p->get_geom_base()->getName().get_char_star(), p->get_group_name().get_char_star(), p->get_name().get_char_star() );
@@ -1177,7 +1187,7 @@ void PHolderListMgr::ReadPHolderListXDDM( char *newfile )
 
 		if ( var_node )
 		{
-			Parm* p = pHolderListMgrPtr->ParseVarname( var_node, gVec );
+			Parm* p = ParseVarname( var_node, gVec );
 
 			if ( p )
 			{
@@ -1190,7 +1200,6 @@ void PHolderListMgr::ReadPHolderListXDDM( char *newfile )
 				{					
 					p->set( val );
 					p->get_geom()->parm_changed( p );
-					cout << "Does not think paramater is an analysis command";
 				}
 
 				ParmHolder* ph = new ParmHolder();
@@ -1211,6 +1220,10 @@ void PHolderListMgr::ReadPHolderListXDDM( char *newfile )
 
 	//===== Free Doc =====//
 	xmlFreeDoc( doc );
+
+	//==== Write New XDDM File if there are any analysis nodes ====//
+	if( num_a > 0 )
+		WritePHolderListXDDM( newfile );
 
 //			return 1;
 }
