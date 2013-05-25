@@ -186,6 +186,12 @@ Geom::Geom( Aircraft* aptr ) : GeomBase()
 	shellMassArea.initialize(this, UPD_XFORM, "Shell Mass Area", 1.0 );
     shellMassArea.set_lower_upper( 0.0, 10000000.0);
 
+	//==== Inititalize Comp Geom Storage Parameters ====//
+	theo_area.initialize(this, UPD_COMPGEOM, "Theo_Area", 0.0 );
+	wet_area.initialize(this, UPD_COMPGEOM, "Wet_Area", 0.0 );
+	theo_vol.initialize(this, UPD_COMPGEOM, "Theo_Vol", 0.0 );
+	wet_vol.initialize(this, UPD_COMPGEOM, "Wet_Vol", 0.0 );
+
 	refFlag = 0;
 	refArea = 100.0;
 	refSpan = 10.0;
@@ -422,6 +428,11 @@ void Geom::LoadLinkableParms( vector< Parm* > & parmVec )
 
 	AddLinkableParm( &density, parmVec, this, "Mass" );
 	AddLinkableParm( &shellMassArea, parmVec, this, "Mass" );
+
+	AddLinkableParm( &theo_area, parmVec, this, "Comp_Geom" );
+	AddLinkableParm( &wet_area, parmVec, this, "Comp_Geom" );
+	AddLinkableParm( &theo_vol, parmVec, this, "Comp_Geom" );
+	AddLinkableParm( &wet_vol, parmVec, this, "Comp_Geom" );
 }
 
 //==== Tell Aircraft to Redraw ====//

@@ -586,19 +586,6 @@ void Ms_wing_geom::define_parms()
   max_num_segs.set_lower_upper( 2.0, 30.0 );
   max_num_segs.set_script("wing_dihed maxsegs", 1);
 
-  //==== Comp Geom Variables ====//
-  theo_area.initialize(this, UPD_MSW_THEO_AREA, "Theo_Area", 0 );
-  theo_area.set_script("wing_plan theo_area", 0);
-
-  wetted_area.initialize(this, UPD_MSW_WET_AREA, "Wet_Area", 0 );
-  wetted_area.set_script("wing_plan wetted_area", 0 );
-
-  theo_volume.initialize(this, UPD_MSW_THEO_VOL, "Theo_Vol", 0 );
-  theo_volume.set_script("wing_plan theo_vol", 0);
-
-  wetted_volume.initialize(this, UPD_MSW_WET_VOL, "Wet_Vol", 0 );
-  wetted_volume.set_script("wing_plan wetted_vol", 0 );
-
 //  for ( i = 0 ; i < sects.dimension() ; i++ )
   for ( i = 0 ; i < (int)sects.size() ; i++ )
   {
@@ -620,12 +607,7 @@ void Ms_wing_geom::LoadLinkableParms( vector< Parm* > & parmVec )
 
 	Geom::AddLinkableParm( &sweep_off, parmVec, this, "Design" );
 	Geom::AddLinkableParm( &total_aspect, parmVec, this, "Design" );
-	
-	// Add comp geom parameters so they can used for design purposes
-	Geom::AddLinkableParm( &theo_area, parmVec, this, "Design" );
-	Geom::AddLinkableParm( &wetted_area, parmVec, this, "Design" );
-	Geom::AddLinkableParm( &theo_volume, parmVec, this, "Design" );
-	Geom::AddLinkableParm( &wetted_volume, parmVec, this, "Design" );
+
 
 	//==== Sections ====//
 //	for ( i = 0 ; i < sects.dimension() ; i++ )

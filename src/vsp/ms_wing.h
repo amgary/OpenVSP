@@ -40,10 +40,6 @@ using namespace std;
 #define UPD_MSW_TOTAL_AREA       6
 #define UPD_MSW_AVG_CHORD        7
 #define UPD_MSW_SECTS            8
-#define UPD_MSW_THEO_AREA        9
-#define UPD_MSW_WET_AREA         10
-#define UPD_MSW_THEO_VOL         11
-#define UPD_MSW_WET_VOL          12
 
 #define MSW_HIGHLIGHT_NONE		0
 #define MSW_HIGHLIGHT_SECT		1

@@ -2622,7 +2622,7 @@ Geom* Aircraft::comp_geom(int sliceFlag, int meshFlag, int halfFlag )
 
 			for (j = 0 ; j <(int)parmNames.size() ; j++ )
 			{
-				Parm* p = parmMgrPtr->FindParm( geomVec, geomVec[i]->getPtrID(), (Stringc)"Design", parmNames[j] );
+				Parm* p = parmMgrPtr->FindParm( geomVec, geomVec[i]->getPtrID(), (Stringc)"Comp_Geom", parmNames[j] );
 
 				if ( p )
 				{

@@ -63,7 +63,7 @@ class BaseSource;
 #define UPD_FUSE_BODY		(UPD_XFORM+10)
 #define UPD_HAVOC			(UPD_XFORM+11)	// Havoc
 #define UPD_EDIT_CRV		(UPD_XFORM+12)	// Edit Curve
-			
+#define UPD_COMPGEOM    (UPD_XFORM+13)  // Comp Geom Parm Update Tags
 
 class Aircraft;
 class ON_BinaryFile;
@@ -337,6 +337,11 @@ public:
 
 	Parm density;
 	Parm shellMassArea;
+
+	Parm theo_area;             // Comp Geom Storage Parameters
+    Parm wet_area;
+    Parm theo_vol;
+    Parm wet_vol;
 
 	//==== Structures ====//
 	int currPartID;
