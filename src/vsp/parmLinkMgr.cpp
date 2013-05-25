@@ -1104,16 +1104,7 @@ void PHolderListMgr::WritePHolderListXDDM( char *newfile )
 		else if( m_PHolderVec[i]->getDesType() == XDDM_CONST )
 			var_node = xmlNewChild( model_node, NULL, (const xmlChar *)"Constant", NULL );
 		else
-		{
 			var_node = xmlNewChild( model_node, NULL, (const xmlChar *)"Analysis", NULL );
-			cout << p->get_group_name();
-			cout << p->get_name();
-			cout << '\n';
-			if ( !strcmp( p->get_name() , "Volume") )
-			{
-				cout << "Volume Analysis Requested\n";
-			}
-		}
 
 		char varname[255];
 		sprintf( varname, "%d:%s:%s:%s", ((Geom*)p->get_geom_base())->getPtrID(), p->get_geom_base()->getName().get_char_star(), p->get_group_name().get_char_star(), p->get_name().get_char_star() );

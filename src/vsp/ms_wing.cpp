@@ -622,7 +622,6 @@ void Ms_wing_geom::LoadLinkableParms( vector< Parm* > & parmVec )
 	Geom::AddLinkableParm( &total_aspect, parmVec, this, "Design" );
 	
 	// Add comp geom parameters so they can used for design purposes
-	cout << "Adding Design Vars\n";
 	Geom::AddLinkableParm( &theo_area, parmVec, this, "Design" );
 	Geom::AddLinkableParm( &wetted_area, parmVec, this, "Design" );
 	Geom::AddLinkableParm( &theo_volume, parmVec, this, "Design" );
