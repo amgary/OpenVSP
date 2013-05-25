@@ -2566,7 +2566,7 @@ Geom* Aircraft::addMeshGeom()
 	
 Geom* Aircraft::comp_geom(int sliceFlag, int meshFlag, int halfFlag )
 {
-	int i, j;
+	int i, j, k;
 
 	MeshGeom* newGeom = new MeshGeom( this );
 	newGeom->setMeshType( MeshGeom::INTERSECTION_MESH );
@@ -2613,21 +2613,35 @@ Geom* Aircraft::comp_geom(int sliceFlag, int meshFlag, int halfFlag )
 				
 		for (i = 0 ; i <(int)geomVec.size() ; i++ )
 		{
-			cout << geomVec[i]->getPtrID();
-			Parm* p = parmMgrPtr->FindParm( geomVec, geomVec[i]->getPtrID(), (Stringc)"Design", (Stringc)"Theo_Area" );
-			if ( p )
-			{
-				for (i = 0 ; i <(int)newGeom->tMeshVec.size() ; i++ )
-				{
-					cout << (newGeom->tMeshVec[i])->theoArea;
-					cout << '\n';
-					cout << (newGeom->tMeshVec[i])->ptr_id;
-					cout << '\n';
 
-					if ( ((Geom*)p->get_geom_base())->getPtrID() == (newGeom->tMeshVec[i])->ptr_id )
+			vector< Stringc > parmNames;
+			parmNames.push_back( (const Stringc)"Theo_Area" );
+			parmNames.push_back( (const Stringc)"Wet_Area" );
+			parmNames.push_back( (const Stringc)"Theo_Vol" );
+			parmNames.push_back( (const Stringc)"Wet_Vol" );
+
+			for (j = 0 ; j <(int)parmNames.size() ; j++ )
+			{
+				Parm* p = parmMgrPtr->FindParm( geomVec, geomVec[i]->getPtrID(), (Stringc)"Design", parmNames[j] );
+
+				if ( p )
+				{
+					for (k = 0 ; k <(int)newGeom->tMeshVec.size() ; k++ )
 					{
-						p->set( (newGeom->tMeshVec[i])->theoArea );
-						p->get_geom()->parm_changed( p );
+
+						if ( ((Geom*)p->get_geom_base())->getPtrID() == (newGeom->tMeshVec[k])->ptr_id )
+						{
+							if ( j == 0 )
+								p->set( (newGeom->tMeshVec[k])->theoArea );
+							if ( j == 1 )
+								p->set( (newGeom->tMeshVec[k])->wetArea );
+							if ( j == 2 )
+								p->set( (newGeom->tMeshVec[k])->theoVol );
+							if ( j == 3 )
+								p->set( (newGeom->tMeshVec[k])->wetVol );
+
+							p->get_geom()->parm_changed( p );
+						}
 					}
 				}
 			}
