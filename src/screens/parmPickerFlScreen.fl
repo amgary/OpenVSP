@@ -7,7 +7,7 @@ class ParmPickerUI {open
   Function {ParmPickerUI()} {open
   } {
     Fl_Window UIWindow {
-      label {Design Var Mgr} open selected
+      label {Design Var Mgr} open
       xywh {646 55 286 451} type Double color 45 resizable visible
     } {
       Fl_Box {} {
@@ -86,13 +86,21 @@ class ParmPickerUI {open
         label {XDDM Type:}
         xywh {5 105 105 20} box BORDER_BOX labelfont 1 labelcolor 15
       }
-      Fl_Light_Button varButton {
-        label Variable
-        xywh {110 105 85 20} labelfont 1
-      }
-      Fl_Light_Button constButton {
-        label Constant
-        xywh {195 105 85 20} labelfont 1
+      Fl_Choice varTypeMenu {open selected
+        xywh {110 105 170 20} down_box BORDER_BOX
+      } {
+        MenuItem {} {
+          label Variable
+          xywh {0 0 100 20} labelfont 1
+        }
+        MenuItem {} {
+          label Constant
+          xywh {0 0 100 20} labelfont 1
+        }
+        MenuItem {} {
+          label Analysis
+          xywh {0 0 100 20} labelfont 1
+        }
       }
     }
   }
