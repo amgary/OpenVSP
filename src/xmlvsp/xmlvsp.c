@@ -63,6 +63,35 @@ xmlNodePtr xmlGetNode( xmlNodePtr node, const char * name, int id )
   return NULL;
 }
 
+xmlNodePtr xmlGetXDDMNode( xmlNodePtr node, const char * name, const char * varname )
+{
+	xmlNodePtr iter_node;
+
+	if ( node == NULL )
+		return NULL;
+
+	iter_node = node->xmlChildrenNode;
+
+	while( iter_node != NULL )
+	{
+		//SR addition to read in external XML files
+		if (name==NULL) {
+			return iter_node;
+		}
+		else {
+
+			if ( !xmlStrcmp( iter_node->name, (const xmlChar *)name ) && !strcmp(xmlFindPropString( iter_node, "VSPVarName", " " ), varname ) )
+			{
+				return iter_node;
+
+			}
+		}
+	iter_node = iter_node->next;
+	}
+	return NULL;
+}
+
+
 double xmlExtractDouble( xmlNodePtr node )
 {
   char* str = (char *)xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );

@@ -1084,30 +1084,56 @@ void PHolderListMgr::ReadPHolderListDES( char *newfile )
 
 void PHolderListMgr::WritePHolderListXDDM( char *newfile )
 {
-	xmlDocPtr doc = xmlNewDoc((const xmlChar *)"1.0");
+	xmlDocPtr doc;
+	int DesType;
 
-	xmlNodePtr model_node = xmlNewNode(NULL,(const xmlChar *)"Model");
-	xmlDocSetRootElement(doc, model_node);
+	doc = xmlParseFile(newfile);
+	xmlNodePtr root = xmlDocGetRootElement(doc);
 
-	xmlSetProp( model_node, (const xmlChar *)"ID", (const xmlChar *)aircraftPtr->getFileName().get_char_star() );
-	xmlSetProp( model_node, (const xmlChar *)"Modeler", (const xmlChar *)"OpenVSP" );
-	xmlSetProp( model_node, (const xmlChar *)"Wrapper", (const xmlChar *)"wrap_vsp.csh" );
+	if( root == NULL)
+	{
+		xmlFreeDoc( doc );
+		doc = xmlNewDoc((const xmlChar *)"1.0");
+		root = xmlNewNode(NULL,(const xmlChar *)"Model");
+		xmlDocSetRootElement(doc, root);
+
+		xmlSetProp( root, (const xmlChar *)"ID", (const xmlChar *)aircraftPtr->getFileName().get_char_star() );
+		xmlSetProp( root, (const xmlChar *)"Modeler", (const xmlChar *)"OpenVSP" );
+		xmlSetProp( root, (const xmlChar *)"Wrapper", (const xmlChar *)"wrap_vsp.csh" );
+	}
 
 	for ( int i = 0 ; i < (int)m_PHolderVec.size() ; i++ )
 	{
 		Parm* p = m_PHolderVec[i]->getParm();
-
+		DesType = m_PHolderVec[i]->getDesType();
 		xmlNodePtr var_node;
-
-		if( m_PHolderVec[i]->getDesType() == XDDM_VAR )
-			var_node = xmlNewChild( model_node, NULL, (const xmlChar *)"Variable", NULL );
-		else if( m_PHolderVec[i]->getDesType() == XDDM_CONST )
-			var_node = xmlNewChild( model_node, NULL, (const xmlChar *)"Constant", NULL );
-		else
-			var_node = xmlNewChild( model_node, NULL, (const xmlChar *)"Analysis", NULL );
 
 		char varname[255];
 		sprintf( varname, "%d:%s:%s:%s", ((Geom*)p->get_geom_base())->getPtrID(), p->get_geom_base()->getName().get_char_star(), p->get_group_name().get_char_star(), p->get_name().get_char_star() );
+
+		if( DesType == XDDM_VAR)
+			var_node = xmlGetXDDMNode( root, (const char *)"Variable", varname );
+		else if( DesType == XDDM_CONST )
+			var_node = xmlGetXDDMNode( root, (const char *)"Constant", varname );
+		else
+			var_node = xmlGetXDDMNode( root, (const char *)"Analysis", varname );
+
+		if (var_node == NULL)
+		{
+			xmlNodePtr first_child = root->xmlChildrenNode;
+			if( DesType == XDDM_VAR )
+				var_node = xmlNewNode(NULL, (const xmlChar *)"Variable");
+			else if( DesType == XDDM_CONST )
+				var_node = xmlNewNode(NULL, (const xmlChar *)"Constant");
+			else
+				var_node = xmlNewNode( NULL, (const xmlChar *)"Analysis" );
+
+			if(first_child)
+				var_node = xmlAddPrevSibling(first_child, var_node);
+			else
+				var_node = xmlAddChild(root,var_node);
+
+		}
 
 		xmlSetProp( var_node, (const xmlChar *)"ID", (const xmlChar *)varname );
 		xmlSetDoubleProp( var_node, "Value", p->get() );

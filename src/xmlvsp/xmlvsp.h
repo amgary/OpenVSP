@@ -22,6 +22,7 @@ extern "C" {
 
 int xmlGetNumNames( xmlNodePtr node, const char * name );
 xmlNodePtr xmlGetNode( xmlNodePtr node, const char * name, int num );
+xmlNodePtr xmlGetXDDMNode( xmlNodePtr node, const char * name, const char * varname );
 
 double xmlExtractDouble( xmlNodePtr node );
 int    xmlExtractInt( xmlNodePtr node );
