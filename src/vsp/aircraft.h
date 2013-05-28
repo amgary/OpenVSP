@@ -152,7 +152,7 @@ public:
 	Geom* read_nascart_file(const char* file_name);
 	VSPDLL Geom* addMeshGeom();
 
-	void updateCompGeomParms(vector < TMesh* > tMeshVec);
+	void updateCompGeomParms(const vector < vector< TMesh* > > tMeshCompVec);
 
 	Stringc getFileName()					{ return fileName; }
 

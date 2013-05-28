@@ -1429,6 +1429,8 @@ void MeshGeom::intersectTrim(int meshf, int halfFlag )
 	fprintf(fid, "%9.3f  %9.3f  %9.3f  %9.3f  %-15s\n",
 			totalTheoArea, totalWetArea, totalTheoVol, totalWetVol, "Totals" );
 
+	airPtr->updateCompGeomParms(tMeshCompVec);
+
 	if ( meshFlag && !halfFlag )
 	{
 		waterTightCheck(fid);
