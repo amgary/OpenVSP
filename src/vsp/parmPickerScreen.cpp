@@ -106,11 +106,11 @@ void ParmPickerScreen::update()
 	//==== Update Parm Browser ====//
 	parmPickerUI->parmBrowser->clear();
 
-	static int widths[] = { 75,75,90,20 };	// widths for each column
+	static int widths[] = { 75,75,88,20 };	// widths for each column
 	parmPickerUI->parmBrowser->column_widths(widths);		// assign array to widget
 	parmPickerUI->parmBrowser->column_char(':');			// use : as the column character
 
-	sprintf( str, "@b@.COMP_A:@b@.GROUP:@b@.PARM:@b@.V/C/A" );
+	sprintf( str, "@b@.COMP_A:@b@.GROUP:@b@.PARM:@b@.Type" );
 	parmPickerUI->parmBrowser->add( str );
 
 	vector< ParmHolder* > pHolderVec = pHolderListMgrPtr->GetPHolderVec();
