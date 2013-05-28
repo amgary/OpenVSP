@@ -1111,8 +1111,11 @@ void PHolderListMgr::WritePHolderListXDDM( char *newfile )
 
 		xmlSetProp( var_node, (const xmlChar *)"ID", (const xmlChar *)varname );
 		xmlSetDoubleProp( var_node, "Value", p->get() );
-		xmlSetDoubleProp( var_node, "Min", p->get_lower() );
-		xmlSetDoubleProp( var_node, "Max", p->get_upper() );
+		if ( m_PHolderVec[i]->getDesType() != XDDM_ANALY )
+		{
+			xmlSetDoubleProp( var_node, "Min", p->get_lower() );
+			xmlSetDoubleProp( var_node, "Max", p->get_upper() );
+		}
 		xmlSetProp( var_node, (const xmlChar *)"VSPVarName", (const xmlChar *)varname );
 	}
 
