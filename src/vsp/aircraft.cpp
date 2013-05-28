@@ -2566,7 +2566,7 @@ Geom* Aircraft::addMeshGeom()
 	
 Geom* Aircraft::comp_geom(int sliceFlag, int meshFlag, int halfFlag )
 {
-	int i, j, k;
+	int i, j;
 
 	MeshGeom* newGeom = new MeshGeom( this );
 	newGeom->setMeshType( MeshGeom::INTERSECTION_MESH );
@@ -2611,15 +2611,35 @@ Geom* Aircraft::comp_geom(int sliceFlag, int meshFlag, int halfFlag )
 		else
 			newGeom->intersectTrim(meshFlag, halfFlag);
 
+		addGeom( newGeom );
+		updateCompGeomParms(newGeom->tMeshVec);
+		newGeom->setRedFlag(1);
+
+		modifyGeom( newGeom );
+		setActiveGeom( newGeom );
+
+		if (screenMgr) screenMgr->getMeshScreen()->show( newGeom );
+	}
+	else
+	{
+		delete newGeom;
+		newGeom = 0;
+	}
+	return newGeom;
+}
+
+void Aircraft::updateCompGeomParms(vector < TMesh* > tMeshVec)
+{
 	//==== Update Comp Geom Area and Volume Parameters for Each Component ==== //
+	int i, j, k;
 
 		//==== Count Components ====//
 		vector< int > compIdVec;
-		for ( i = 0 ; i < (int)newGeom->tMeshVec.size() ; i++ )
+		for ( i = 0 ; i < (int)tMeshVec.size() ; i++ )
 		{
-			if ( !(newGeom->tMeshVec[i])->halfBoxFlag )
+			if ( !(tMeshVec[i])->halfBoxFlag )
 			{
-				int id = (newGeom->tMeshVec[i])->ptr_id;
+				int id = (tMeshVec[i])->ptr_id;
 				vector<int>::iterator iter;
 
 				iter = find(compIdVec.begin(), compIdVec.end(), id );
@@ -2633,23 +2653,22 @@ Geom* Aircraft::comp_geom(int sliceFlag, int meshFlag, int halfFlag )
 		for ( i = 0 ; i < (int)compIdVec.size() ; i++ )
 		{
 			vector<TMesh*> cidVec;
-			for ( j = 0 ; j < (int)(newGeom->tMeshVec.size()) ; j++ )
+			for ( j = 0 ; j < (int)(tMeshVec.size()) ; j++ )
 			{
-				if ( compIdVec[i] == (newGeom->tMeshVec[j])->ptr_id )
-					cidVec.push_back( newGeom->tMeshVec[j] );
+				if ( compIdVec[i] == (tMeshVec[j])->ptr_id )
+					cidVec.push_back( tMeshVec[j] );
 			}
 			tMeshCompVec.push_back( cidVec );
 		}
 
+		vector< Stringc > parmNames;
+		parmNames.push_back( (const Stringc)"Theo_Area" );
+		parmNames.push_back( (const Stringc)"Wet_Area" );
+		parmNames.push_back( (const Stringc)"Theo_Vol" );
+		parmNames.push_back( (const Stringc)"Wet_Vol" );
+
 		for (i = 0 ; i <(int)geomVec.size() ; i++ )
 		{
-
-			vector< Stringc > parmNames;
-			parmNames.push_back( (const Stringc)"Theo_Area" );
-			parmNames.push_back( (const Stringc)"Wet_Area" );
-			parmNames.push_back( (const Stringc)"Theo_Vol" );
-			parmNames.push_back( (const Stringc)"Wet_Vol" );
-
 			for (j = 0 ; j <(int)parmNames.size() ; j++ )
 			{
 				Parm* p = parmMgrPtr->FindParm( geomVec, geomVec[i]->getPtrID(), (Stringc)"Comp_Geom", parmNames[j] );
@@ -2676,23 +2695,6 @@ Geom* Aircraft::comp_geom(int sliceFlag, int meshFlag, int halfFlag )
 				}
 			}
 		}
-
-		// ============///
-
-		addGeom( newGeom );
-		newGeom->setRedFlag(1);
-
-		modifyGeom( newGeom );
-		setActiveGeom( newGeom );
-
-		if (screenMgr) screenMgr->getMeshScreen()->show( newGeom );
-	}
-	else
-	{
-		delete newGeom;
-		newGeom = 0;
-	}
-	return newGeom;
 }
 
 Geom* Aircraft::massprop(int numSlice)
