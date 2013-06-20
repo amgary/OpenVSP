@@ -127,7 +127,7 @@ public:
 	virtual void parm_changed(Parm*) = 0;
 	virtual void update_bbox() = 0;
 	virtual void update_xformed_bbox();
-	virtual void draw_bbox();
+	virtual void draw_bbox0();
 	virtual int  valid_bnd_box()				{ return 1; }
 	virtual bbox get_bnd_box()					{ return bnd_box_xform; }
 	virtual void draw_highlight_boxes();
@@ -145,9 +145,6 @@ public:
 	virtual void setSymCode( int in_sym );
 	virtual int getSymCode()					{ return sym_code; }
 	virtual vec3d getSymVec()					{ return sym_vec; }
-
-	virtual int getIdNum()						{ return id_num; }
-	virtual Stringc getIdStr()					{ return id_str; }
 
 	virtual void setMaterialID( int m );
 	virtual int getMaterialID()					{ return materialID; }
@@ -214,8 +211,9 @@ public:
 	virtual double get_rot_y();
 	virtual double get_rot_z();
 
-	virtual void setPtrID( int id )				{ ptrID = id; }
-	virtual int getPtrID()						{ return ptrID; }
+	virtual int getPtrID();
+	virtual void initPtrID();
+	virtual void resetPtrID()					{ ptrID = 0; }
 
 	virtual void setMassPrior( int val )		{ massPrior = val; }
 	virtual int  getMassPrior()					{ return massPrior; }
@@ -390,9 +388,6 @@ protected:
    int massPrior;
    int shellFlag;
 
-   int id_num;
-   Stringc id_str;
-
    int saveFlag;
    int noshowFlag;
    int fastDrawFlag;
@@ -516,6 +511,7 @@ public:
 
 	virtual void write(xmlNodePtr node);
 	virtual void read(xmlNodePtr node);
+	virtual void read(FILE* file_id) {Geom::read(file_id);}
 
 	virtual void copy( Geom* fromGeom );
 	virtual void parm_changed(Parm*);
@@ -575,6 +571,7 @@ public:
 
 	virtual void write(xmlNodePtr node)			{}	
 	virtual void read(xmlNodePtr node)			{} 
+	virtual void read(FILE* file_id) {Geom::read(file_id);}
 
 	virtual int getNumXSecSurfs()				{ return 0; }
 
@@ -618,6 +615,7 @@ public:
 	virtual void copy( Geom* fromGeom );
 	virtual void write(xmlNodePtr node);
 	virtual void read(xmlNodePtr node);
+	virtual void read(FILE* file_id) {Geom::read(file_id);}
 
 	virtual void parm_changed(Parm*);
 	virtual void draw();
@@ -657,6 +655,7 @@ public:
 
 	virtual void write(xmlNodePtr node);
 	virtual void read(xmlNodePtr node);
+	virtual void read(FILE* file_id) {Geom::read(file_id);}
 
 	virtual void copy( Geom* fromGeom );
 	virtual void parm_changed(Parm*);

@@ -44,7 +44,6 @@ WingGeom::WingGeom(Aircraft* aptr) : Geom(aptr)
 	sprintf( name, "Wing_%d", geomCnt ); 
 	geomCnt++;
 	name_str = Stringc(name);
-	id_str = name_str;				//jrg fix
 
 	curr_af_id = MW_ROOT_AF;
 	root_foil = new Af(this);
@@ -1223,7 +1222,7 @@ void WingGeom::read(FILE* file_id)
     {
       fscanf(file_id, "%d",&deflect_flag);      fgets(buff, 80, file_id);
       char str[255];
-      fscanf(file_id, "%s",&str);               fgets(buff, 80, file_id);
+      fscanf(file_id, "%s",str);               fgets(buff, 80, file_id);
       deflect_name = str;
       defl_scale.read(file_id);         // Deflect
       twist_scale.read(file_id);        // Twist

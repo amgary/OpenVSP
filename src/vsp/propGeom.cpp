@@ -67,7 +67,6 @@ PropGeom::PropGeom(Aircraft* aptr) : Geom(aptr)
 	sprintf( name, "Prop_%d", geomCnt ); 
 	geomCnt++;
 	name_str = Stringc(name);
-	id_str = name_str;			
 	setSymCode(NO_SYM);
 
 	numXsecs.deactivate();
@@ -84,7 +83,7 @@ PropGeom::PropGeom(Aircraft* aptr) : Geom(aptr)
 	diameter.set_script("prop_shape diameter", 0);
 
 	cone_angle.initialize(this, "Cone_Angle", 0.0 );
-	cone_angle.set_lower_upper(-45, 45);
+	cone_angle.set_lower_upper(-89, 89);
 	cone_angle.set_script("prop_shape coneang", 0);
 
 	pitch.initialize(this, "Pitch", 0.0 );
@@ -225,6 +224,7 @@ void PropGeom::copy( Geom* fromGeom )
 	for ( int i = 0 ; i < (int)sectVec.size() ; i++ )
 		sectVec[i].SetGeomPtr( this );
 
+	setCurrSectID( currSectID );
 	compose_model_matrix();
 	generate();
 
@@ -275,7 +275,7 @@ void PropGeom::RemoveFoilParmReferences( Af* foil )
 	vector< Parm* > pVec = foil->GetLinkableParms();
 	for ( int i = 0 ; i < (int)pVec.size() ; i++ )
 	{
-		parmLinkMgrPtr->RemoveParmReferences( pVec[i] );
+		parmMgrPtr->RemoveParmReferences( pVec[i] );
 	}
 }
 
@@ -284,10 +284,10 @@ void PropGeom::RemoveSectParmReferences( int sect_id )
 	if ( sect_id < 0 || sect_id >= (int)sectVec.size() )
 		return;
 
-	parmLinkMgrPtr->RemoveParmReferences( &sectVec[sect_id].x_off );
-	parmLinkMgrPtr->RemoveParmReferences( &sectVec[sect_id].y_off );
-	parmLinkMgrPtr->RemoveParmReferences( &sectVec[sect_id].chord );
-	parmLinkMgrPtr->RemoveParmReferences( &sectVec[sect_id].twist );
+	parmMgrPtr->RemoveParmReferences( &sectVec[sect_id].x_off );
+	parmMgrPtr->RemoveParmReferences( &sectVec[sect_id].y_off );
+	parmMgrPtr->RemoveParmReferences( &sectVec[sect_id].chord );
+	parmMgrPtr->RemoveParmReferences( &sectVec[sect_id].twist );
 }
 
 void PropGeom::addStation()
@@ -321,7 +321,7 @@ void PropGeom::addStation()
 	setCurrSectID( currSectID+1 );
 	generate();
 
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 }
 
@@ -352,7 +352,7 @@ void PropGeom::delStation()
 	setCurrSectID( currSectID );
 	generate();
 
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 
 }
@@ -718,7 +718,7 @@ void PropGeom::read(xmlNodePtr root)
   currSectID = 0;
 
   generate();
-  parmLinkMgrPtr->RebuildAll();
+  parmMgrPtr->RebuildAll();
 
 }
 

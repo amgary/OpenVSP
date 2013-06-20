@@ -20,7 +20,7 @@ int xmlGetNumNames( xmlNodePtr node, const char * name )
   //==== Parse This Level ====//
   while( iter_node != NULL )
   {
-    if ( !xmlStrcmp( iter_node->name, name ) )
+    if ( !xmlStrcmp( iter_node->name, (const xmlChar *)name ) )
       num++;
     iter_node = iter_node->next;
   }
@@ -49,7 +49,7 @@ xmlNodePtr xmlGetNode( xmlNodePtr node, const char * name, int id )
 	  }
 	  else {
 
-	  if ( !xmlStrcmp( iter_node->name, name ) )
+	  if ( !xmlStrcmp( iter_node->name, (const xmlChar *)name ) )
     {
       if ( id == num )
         return iter_node;
@@ -65,7 +65,7 @@ xmlNodePtr xmlGetNode( xmlNodePtr node, const char * name, int id )
 
 double xmlExtractDouble( xmlNodePtr node )
 {
-  char* str = xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
+  char* str = (char *)xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
   double val = 0.0;
   if ( str )
   {
@@ -77,7 +77,7 @@ double xmlExtractDouble( xmlNodePtr node )
 
 int xmlExtractInt( xmlNodePtr node )
 {
-  char* str = xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
+  char* str = (char *)xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
   int val = 0;
   if ( str )
   {
@@ -89,7 +89,7 @@ int xmlExtractInt( xmlNodePtr node )
 
 char*  xmlExtractString( xmlNodePtr node )
 {
-	char* str = xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
+	char* str = (char *)xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
 	char* val;
 	if ( str )
 	{
@@ -132,7 +132,7 @@ int xmlFindInt( xmlNodePtr node, const char * name, int def )
   return def;
 }
 
-char* xmlFindString( xmlNodePtr node, const char * name, char* def )
+const char* xmlFindString( xmlNodePtr node, const char * name, const char* def )
 {
   xmlNodePtr n;
 
@@ -150,12 +150,41 @@ char* xmlFindString( xmlNodePtr node, const char * name, char* def )
   return def;
 }
 
+double xmlFindPropDouble( xmlNodePtr node, const char * name, double def )
+{
+  char* str;
+  if ( node == NULL )
+    return def;
+
+  str = (char *)xmlGetProp( node, (const xmlChar *)name );
+  if ( str )
+  {
+	def = atof( str );
+	xmlFree( str );
+  }
+
+  return def;
+}
+
+const char* xmlFindPropString( xmlNodePtr node, const char * name, const char* def )
+{
+  char* ret;
+  if ( node == NULL )
+    return def;
+
+  ret = (char *)xmlGetProp( node, (const xmlChar *)name );
+  if ( ret )
+      return ret;
+
+  return def;
+}
+
 xmlNodePtr xmlAddIntNode( xmlNodePtr root, const char * name, int val )
 {
   char str[255];
   xmlNodePtr node = xmlNewChild( root, NULL, (const xmlChar *)name, NULL );
 
-  sprintf( str, "%d\0", val );
+  sprintf( str, "%d", val );
 	xmlNodeSetContent(node, (const xmlChar *)str);
 
   return node;
@@ -166,7 +195,7 @@ xmlNodePtr xmlAddDoubleNode( xmlNodePtr root, const char * name, double val )
   char str[255];
   xmlNodePtr node = xmlNewChild( root, NULL, (const xmlChar *)name, NULL );
 
-  sprintf( str, "%lf\0", val );
+  sprintf( str, "%lf", val );
 	xmlNodeSetContent(node, (const xmlChar *)str);
 
   return node;
@@ -180,7 +209,13 @@ xmlNodePtr xmlAddStringNode( xmlNodePtr root, const char * name, const char * va
   return node;
 }
 
+void xmlSetDoubleProp( xmlNodePtr root, const char * name, double val )
+{
+  char str[255];
 
+  sprintf( str, "%lf", val );
+  xmlSetProp( root, (const xmlChar *)name, (const xmlChar *)str );
+}
 
 int xmlGetNumArray( xmlNodePtr node, const char sep )
 {
@@ -192,7 +227,7 @@ int xmlGetNumArray( xmlNodePtr node, const char sep )
 
   num = 0;
   elemcnt = 0;
-  str = xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
+  str = (char *)xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
   len = strlen( str );
 
   i = num = elemcnt = 0;
@@ -228,7 +263,7 @@ int xmlExtractDoubleArray( xmlNodePtr node, const char sep, double * array, int 
 
   num = 0;
   elemcnt = 0;
-  str = xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
+  str = (char *)xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
   len = strlen( str );
 
   i = num = elemcnt = 0;
@@ -271,7 +306,7 @@ int xmlExtractIntArray( xmlNodePtr node, const char sep, int * array, int size )
 
   num = 0;
   elemcnt = 0;
-  str = xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
+  str = (char *)xmlNodeListGetString( node->doc, node->xmlChildrenNode, 1 );
   len = strlen( str );
 
   i = num = elemcnt = 0;

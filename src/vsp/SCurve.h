@@ -45,19 +45,22 @@ public:
 	double GetTargetLen( GridDensity* grid_den, SCurve* BCurve, vec3d p, vec3d uw, double u );
 
 	void BorderTesselate( );
-	void BuildDistTable( GridDensity* grid_den, SCurve* BCurve );
+	void InterpDistTable( double idouble, double &t, double &u, double &s, double &dsdi );
+	void BuildDistTable( GridDensity* grid_den, SCurve* BCurve, list< MapSource* > & splitSources );
 	void CleanupDistTable();
 	void LimitTarget( GridDensity* grid_den );
 	void TessEndPts();
 	void TessIntegrate();
 	void TessRevIntegrate( vector< double > &utess );
+	bool NewtonFind( double starget, double &s, double &ireal, double &t, double &dsdi, double &u, int direction );
+	bool BisectFind( double starget, double &s, double &ireal, double &t, double &dsdi, double &u, int direction );
 	void TessIntegrate( int direction, vector< double > &utess );
 	void SmoothTess();
 	void UWTess();
-	double CalcDensity( GridDensity* grid_den, SCurve* BCurve );
-	void BuildEdgeSources( MSCloud &es_cloud, GridDensity* grid_den );
-	void ApplyEdgeSources( MSTree &es_tree, MSCloud &es_cloud, GridDensity* grid_den );
-	void Tesselate( MSTree &es_tree, MSCloud &es_cloud, GridDensity* grid_den );
+	void SpreadDensity( SCurve* BCurve );
+	void CalcDensity( GridDensity* grid_den, SCurve* BCurve, list< MapSource* > & splitSources );
+	void ApplyESSurface( double u, double t );
+	void Tesselate();
 	void Tesselate( vector< vec3d > & target_pnts );
 
 	void SetBezierControlPnts( vector< vec3d > & pnts );

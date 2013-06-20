@@ -484,6 +484,7 @@ ISegChain::ISegChain()
 {
 	m_SurfA = m_SurfB = NULL;
 	m_BorderFlag = false;
+	m_WakeAttachChain = NULL;
 
 }
 
@@ -548,6 +549,48 @@ double ISegChain::ChainDist( ISegChain* B )
 	close_dist = min( close_dist, backSegA->MinDist( backSegB ) );
 
 	return close_dist;
+}
+
+// Test if ISegChain B matches this ISegChain.
+bool ISegChain::Match( ISegChain* B )
+{
+	double tol = 1e-8;
+
+	// Check that parent surfaces are the same.
+	if( m_SurfA->GetSurfID() != B->m_SurfA->GetSurfID() )
+		return false;
+
+	// Find 3d x,y,z coordinates of each chain's end points.
+	ISeg* frontSegA = m_ISegDeque.front();
+	frontSegA->m_IPnt[0]->CompPnt();
+	vec3d pA0 = frontSegA->m_IPnt[0]->m_Pnt;
+
+	ISeg* frontSegB = B->m_ISegDeque.front();
+	frontSegB->m_IPnt[0]->CompPnt();
+	vec3d pB0 = frontSegB->m_IPnt[0]->m_Pnt;
+
+	ISeg* backSegA = m_ISegDeque.back();
+	backSegA->m_IPnt[1]->CompPnt();
+	vec3d pA1 = backSegA->m_IPnt[1]->m_Pnt;
+
+	ISeg* backSegB = B->m_ISegDeque.back();
+	backSegB->m_IPnt[1]->CompPnt();
+	vec3d pB1 = backSegB->m_IPnt[1]->m_Pnt;
+
+	// Test for matching end points.
+	if( dist_squared( pA0, pB0 ) < tol && dist_squared( pA1, pB1 ) < tol )
+		return true;
+
+	// Check for flipped matching end points.
+	if( dist_squared( pA0, pB1 ) < tol && dist_squared( pA1, pB0 ) < tol )
+	{
+		this->FlipDir();
+		printf("Flipping\n");
+		return true;
+	}
+
+	// No match.
+	return false;
 }
 
 void ISegChain::AddSeg( ISeg* seg, bool frontFlag )
@@ -1099,18 +1142,8 @@ void ISegChain::BuildCurves( )
 
 void ISegChain::TransferTess( )
 {
-	//==== Compute Target 3D Points on A Surface ====//
-	vector< vec3d > target_uw;
-	vector< vec3d > target_pnts;
-	target_uw = m_ACurve.GetUWTessPnts();
-
-	for ( int i = 0 ; i < (int)target_uw.size() ; i++ )
-	{
-		vec3d p  = m_SurfA->CompPnt( target_uw[i].x(), target_uw[i].y() );
-		target_pnts.push_back( p );
-	}
-
-	m_BCurve.Tesselate( target_pnts );
+	vector< double > autess = m_ACurve.GetUTessPnts();
+	m_BCurve.Tesselate( autess );
 }
 
 void ISegChain::ApplyTess( )
@@ -1150,19 +1183,20 @@ void ISegChain::ApplyTess( )
 //printf("Tess Chain Size = %d %f\n", m_TessVec.size(), d );
 }
 
-double ISegChain::CalcDensity( GridDensity* grid_den )
+void ISegChain::SpreadDensity( )
 {
-	return m_ACurve.CalcDensity( grid_den, &m_BCurve );
+	m_ACurve.SpreadDensity( &m_BCurve );
 }
 
-void ISegChain::BuildES( MSCloud &es_cloud, GridDensity* grid_den )
+void ISegChain::CalcDensity( GridDensity* grid_den, list< MapSource* > & splitSources )
 {
-	m_ACurve.BuildEdgeSources( es_cloud, grid_den );
+	m_ACurve.CalcDensity( grid_den, &m_BCurve, splitSources );
 }
 
-void ISegChain::Tessellate( MSTree &es_tree, MSCloud &es_cloud, GridDensity* grid_den )
+void ISegChain::Tessellate()
 {
-	m_ACurve.Tesselate( es_tree, es_cloud, grid_den );
+	m_ACurve.Tesselate();
+	m_ACurve.CleanupDistTable();
 }
 
 void ISegChain::TessEndPts()

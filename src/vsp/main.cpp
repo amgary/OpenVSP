@@ -8,13 +8,18 @@
 
 #include <stdio.h>
 
+
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 #ifdef WIN32
-#include <windows.h>		
+#include <windows.h>
+#else
+#include <pthread.h>
 #endif
+
+
 
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
@@ -96,6 +101,8 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
     int writeNascartFlag = 0;
 	int doxmlFlag = 0;
 	int scriptFlag = 0;
+	int desFlag = 0;
+	int xddmFlag = 0;
 	int feaMeshFlag = 0;
 	int cfdMeshFlag = 0;
 	int setTempDirFlag = 0;
@@ -105,6 +112,7 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 	double Mach,sliceAngle;
 	int coneSections;
 	Stringc scriptFile,xmlFile;
+	Stringc desFile, xddmFile;
     char airName[255];
     Stringc exec;
 	int userParmFlag = 0;
@@ -116,7 +124,7 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 		   CFDMESH_DAT, CFDMESH_KEY, FEAMESH_STL, FEAMESH_MASS, FEAMESH_NASTRAN, 
 		   FEAMESH_CALC_GEOM, FEAMESH_CALC_THICK, COMPGEOM_DRAG, NUM_OUT_NAMES }; 
 
-	char* outFileTypes[] = {"compgeom_txt", "compgeom_csv", "cfdmesh_stl", "cfdmesh_poly",
+	const char* outFileTypes[] = {"compgeom_txt", "compgeom_csv", "cfdmesh_stl", "cfdmesh_poly",
 	                        "cfdmesh_tri",  "cfdmesh_obj",  "cfdmesh_dat", "cfdmesh_key",
 	                        "feamesh_stl",  "feamesh_mass", "feamesh_nastran",
 	                        "feamesh_calc_geom",  "feamesh_calc_thick", "compgeom_drag" };
@@ -146,6 +154,20 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 		   {
 				scriptFile = argv[++i]; 
 		        scriptFlag = 1;
+		   }
+       }
+       if ( strcmp(argv[i],"-des") == 0 ) {
+		   if (i+1 < argc)
+		   {
+				desFile = argv[++i];
+		        desFlag = 1;
+		   }
+       }
+       if ( strcmp(argv[i],"-xddm") == 0 ) {
+		   if (i+1 < argc)
+		   {
+				xddmFile = argv[++i];
+		        xddmFlag = 1;
 		   }
        }
 	   if ( strcmp(argv[i],"-loop") == 0 ) {
@@ -289,6 +311,8 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
          printf("  -nascart           Write Nascart file \n");
 		 printf("  -doxml             Process an external xml file \n");
 		 printf("  -userparm # val    Set the value of the user parm \n");
+		 printf("  -des filename      Set variables according to *.des file \n");
+		 printf("  -xddm filename     Set variables according to *.xddm file \n");
 		 printf("  -tempdir pathname  Set the path name of the dir to write temp files\n");
 		 printf("  -outname type name Set the filenames for output where type = \n");
 		 printf("                      %s, %s, %s, %s, \n", outFileTypes[0], outFileTypes[1], outFileTypes[2], outFileTypes[3] );
@@ -374,7 +398,20 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 		airPtr->setActiveGeom( 0 );
 		airPtr->update_bbox();
 
-
+		// Apply design variables before any geometry operations.
+		if ( desFlag )
+		{
+			pHolderListMgrPtr->ReadPHolderListDES( desFile.get_char_star() );
+		}
+		if ( xddmFlag )
+		{
+			pHolderListMgrPtr->ReadPHolderListXDDM( xddmFile.get_char_star() );
+		}
+		if ( userParmFlag )
+		{
+			airPtr->getUserGeom()->SetUserParmValue( userParmID, userParmVal );
+			airPtr->update_bbox();
+		}
 
 		if ( compgeomFlag )
 		{
@@ -419,11 +456,6 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 			feaMeshMgrPtr->Build();
 			feaMeshMgrPtr->Export();
 		}
-		if ( userParmFlag )
-		{
-			airPtr->getUserGeom()->SetUserParmValue( userParmID, userParmVal );
-			airPtr->update_bbox();
-		}
 
 		if (sliceFlag)
 		{
@@ -465,10 +497,10 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 			}
 			cfdMeshMgrPtr->ScaleTriSize( cfdMeshScale );
 			cfdMeshMgrPtr->BuildGrid();
-			double minmap = cfdMeshMgrPtr->BuildTargetMap();
 			cfdMeshMgrPtr->Intersect();
+			cfdMeshMgrPtr->BuildTargetMap( CfdMeshMgr::NO_OUTPUT );
 //			cfdMeshMgrPtr->UpdateSourcesAndWakes();
-			cfdMeshMgrPtr->InitMesh( minmap );
+			cfdMeshMgrPtr->InitMesh( );
 			cfdMeshMgrPtr->Remesh( CfdMeshMgr::NO_OUTPUT );
 
 			//Stringc stereo_file_name = base_name;
@@ -482,7 +514,7 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 //			cfdMeshMgrPtr->WriteNASCART(bodyin_dat_file_name, bodyin_key_file_name );
 			//cfdMeshMgrPtr->WriteTetGen("tetgen.poly");
 			Stringc resultTxt = cfdMeshMgrPtr->CheckWaterTight();
-			printf( resultTxt.get_char_star() );
+			printf( "%s", resultTxt.get_char_star() );
 
 			fflush( stdout );
 
@@ -619,7 +651,19 @@ bool ExtractVersionNumber( string & str, int* major, int* minor, int* change )
 	return false;
 }
 
-void CheckVersionNumber()
+// Simple version message function to be executed by main thread
+// when commanded by version check thread.
+void newver_msg( void *data ) {
+	if ( screenMgrPtr )
+		screenMgrPtr->MessageBox("A new version of OpenVSP is available at http://www.openvsp.org/");
+}
+
+#ifdef WIN32
+DWORD WINAPI CheckVersionNumber(LPVOID lpParameter)
+#else
+void* CheckVersionNumber( void *threadid )
+#endif
+
 {
 	//==== Init Nano HTTP ====//
 	xmlNanoHTTPInit();
@@ -644,7 +688,7 @@ void CheckVersionNumber()
 	char poststr[256];
 	sprintf( poststr, "postvar1=%d&postvar2=%d\r\n", user_id, ver_no);
 	int poststrlen = strlen(poststr);
-	char*  headers = "Content-Type: application/x-www-form-urlencoded \n";
+	const char*  headers = "Content-Type: application/x-www-form-urlencoded \n";
 
 	void * ctx = 0;
 	ctx = xmlNanoHTTPMethod("http://www.openvsp.org/vspuse_post.php", "POST", poststr, NULL, headers, poststrlen );
@@ -701,8 +745,9 @@ void CheckVersionNumber()
 			{
 				if ( major_ver != VSP_VERSION_MAJOR ||minor_ver != VSP_VERSION_MINOR || change_ver != VSP_VERSION_CHANGE )
 				{
-					if ( screenMgrPtr )
-						screenMgrPtr->MessageBox("A new version of OpenVSP is available at http://www.openvsp.org/");
+					// Send message to main thread to display new version message.
+					void *data = NULL;
+					Fl::awake( newver_msg, data );
 				}
 			}
 		}
@@ -710,7 +755,7 @@ void CheckVersionNumber()
 		FILE* vsptime_fp = fopen( ".vsptime", "w" );
 		if ( vsptime_fp )
 		{
-			fprintf( vsptime_fp, "%d", time(NULL) );
+			fprintf( vsptime_fp, "%d", (int)time(NULL) );
 			fclose( vsptime_fp );
 		}
 	}
@@ -719,6 +764,22 @@ void CheckVersionNumber()
 		xmlNanoHTTPClose(ctx);
 
 	xmlNanoHTTPCleanup();
+
+	return 0;
+}
+
+void ThreadCheckVersionNumber()
+{
+#ifdef WIN32
+
+	DWORD myThreadID;
+	HANDLE myHandle = CreateThread(0, 0, CheckVersionNumber, 0, 0, &myThreadID);
+#else
+
+	long t = 0;
+	pthread_t thread;
+	int rc = pthread_create( &thread, NULL, CheckVersionNumber, (void *)t );
+#endif
 }
 
 void vsp_exit()
@@ -751,6 +812,10 @@ void autoSaveTimeoutHandler(void *data)
 //========================= Main =========================//
 int main( int argc, char** argv)
 {
+	// Seed RNG for batch mode.
+	// rand() is used to create ptrID's in Geom constructor.
+	unsigned int seed = (unsigned int)time( NULL );
+	srand( seed );
 
 //FILE* filePtr = fopen("debug.txt", "w" );
 //freopen("debug.txt", "w", stdout); 
@@ -764,7 +829,13 @@ int main( int argc, char** argv)
 	screenMgrPtr = new ScreenMgr(airPtr);
 
 	//==== Check Server For Version Number ====//
-	CheckVersionNumber();
+	ThreadCheckVersionNumber();
+
+	// Seed RNG for interactive mode.
+	// rand() is used to create ptrID's in Geom constructor.
+	// CheckVersionNumber sets the seed based on the file path.  Failure to reset the seed
+	// will leave the RNG in a repeatable state (given the same path to VSP).
+	srand( seed );
 
 	//==== Link Objects ====//
 	airPtr->setScreenMgr( screenMgrPtr );
@@ -789,6 +860,7 @@ int main( int argc, char** argv)
 		screenMgrPtr->showGui( argc-1, argv );
 	}
 
+	Fl::lock();
 	return Fl::run();
 		
 //fclose(filePtr);

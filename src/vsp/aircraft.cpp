@@ -38,6 +38,7 @@
 #include "propScreen.h"
 #include "engineScreen.h"
 #include "labelScreen.h"
+#include "parmPickerScreen.h"
 #include "tMesh.h"
 #include "vorGeom.h"
 #include "structureMgr.h"
@@ -95,6 +96,8 @@ Aircraft::Aircraft()
 	feaMeshMgrPtr->SetAircraftPtr(this);
 	feaMeshMgrPtr->ResetFeaExportFileNames();
 	parmLinkMgrPtr->SetAircraftPtr(this);
+	pHolderListMgrPtr->SetAircraftPtr(this);
+	parmMgrPtr->SetAircraftPtr(this);
 
 
 	//==== Read Custom Default Components ====//
@@ -148,6 +151,12 @@ Aircraft::~Aircraft()
 
 	if ( parmLinkMgrPtr )
 		delete parmLinkMgrPtr;
+
+	if ( pHolderListMgrPtr )
+		delete pHolderListMgrPtr;
+
+	if ( parmMgrPtr )
+		delete parmMgrPtr;
 
 	if ( texMgrPtr )
 		delete texMgrPtr;
@@ -242,11 +251,17 @@ Geom* Aircraft::createGeom( int type )
 		newGeom->copy( m_DefaultCompMap[type] );
 	}
 
+	for ( int j = 0; j < (int) geomVec.size(); j++ )
+	{
+		if ( newGeom->getPtrID() == geomVec[j]->getPtrID() )
+			newGeom->resetPtrID(); // Collision detected
+	}
+
 	addGeom( newGeom );
 
 	if (screenMgr) screenMgr->updateGeomScreens();
 
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 	return newGeom;
 
@@ -446,8 +461,8 @@ void Aircraft::reorderGeom( int action )
 		for ( int i = 0 ; i < (int)gVec.size() ; i++ )
 		{
 			if ( i < (int)(gVec.size()-1) &&
-				 ( action == MOVE_DOWN && gVec[i] == activeGeom || 
-				   action == MOVE_UP   && gVec[i+1] == activeGeom ) )
+				 ( (action == MOVE_DOWN && gVec[i] == activeGeom) ||
+				   (action == MOVE_UP   && gVec[i+1] == activeGeom) ) )
 			{
 				newVec.push_back( gVec[i+1] );
 				newVec.push_back( gVec[i] );
@@ -510,6 +525,7 @@ void Aircraft::writeFile( const char* file_name, vector< Geom * > &gVec, vector<
 	xmlAddDoubleNode( root, "CFD_Mesh_Max_Gap", cfdMeshMgrPtr->GetGridDensityPtr()->GetMaxGap() );
 	xmlAddDoubleNode( root, "CFD_Mesh_Num_Circle_Segments", cfdMeshMgrPtr->GetGridDensityPtr()->GetNCircSeg() );
 	xmlAddDoubleNode( root, "CFD_Mesh_Growth_Ratio", cfdMeshMgrPtr->GetGridDensityPtr()->GetGrowRatio() );
+	xmlAddIntNode( root, "CFD_Mesh_Rigorous_Limiting", cfdMeshMgrPtr->GetGridDensityPtr()->GetRigorLimit() );
 	xmlAddDoubleNode( root, "CFD_Far_Field_Scale_X", cfdMeshMgrPtr->GetFarXScale() );
 	xmlAddDoubleNode( root, "CFD_Far_Field_Scale_Y", cfdMeshMgrPtr->GetFarYScale() );
 	xmlAddDoubleNode( root, "CFD_Far_Field_Scale_Z", cfdMeshMgrPtr->GetFarZScale() );
@@ -567,6 +583,10 @@ void Aircraft::newFile()
 	}
 
 	parmLinkMgrPtr->DelAllLinks();
+	pHolderListMgrPtr->DelAllPHolders();
+	if ( getScreenMgr() )
+		getScreenMgr()->getParmPickerScreen()->update();
+
 	updateExportFileNames();
 	cfdMeshMgrPtr->ResetExportFileNames();
 	feaMeshMgrPtr->ResetFeaExportFileNames();
@@ -616,6 +636,7 @@ int  Aircraft::insertFile( const char* file_name )
 	Geom * activeGeom = getActiveGeom();
 	if ( readFile( file_name ) )
 	{
+		resetClipBoardPtrIDCollisions();
 
 		//==== Add Blank Component ====//
 		BlankGeom* blankGeom = new BlankGeom( this );
@@ -846,6 +867,29 @@ int Aircraft::readFile(const char* file_name )
       }
     }
 
+    bool collision = false;
+    for (  i = 0 ; i < (int)addGeomVec.size() - 1 ; i++ )
+	{
+		for ( j = i + 1 ; j < (int)addGeomVec.size() ; j++ )
+		{
+			if( addGeomVec[i]->getPtrID() == addGeomVec[j]->getPtrID() )
+			{
+				collision = true;
+				addGeomVec[j]->resetPtrID();
+			}
+		}
+	}
+    if( collision == true )
+    {
+		printf("\n\n!!!!!!!\n");
+		printf("Duplicate PtrID's detected in file.\n");
+		printf("  New PtrID's have been created, but parent/child relationships,\n");
+		printf("  parameter links, design file ID's, and similar features of your\n");
+		printf("  model may be broken.\n");
+		printf("  Check your model carefully.\n");
+		printf("!!!!!!!\n\n\n");
+    }
+
 	//==== Set Up Parent/Child Links ====//
 	for (  i = 0 ; i < (int)addGeomVec.size() ; i++ )
 	{
@@ -889,6 +933,8 @@ int Aircraft::readFile(const char* file_name )
 	cfdMeshMgrPtr->GetGridDensityPtr()->SetMaxGap( xmlFindDouble( root, "CFD_Mesh_Max_Gap", cfdMeshMgrPtr->GetGridDensityPtr()->GetMaxGap() ) );
 	cfdMeshMgrPtr->GetGridDensityPtr()->SetNCircSeg( xmlFindDouble( root, "CFD_Mesh_Num_Circle_Segments", cfdMeshMgrPtr->GetGridDensityPtr()->GetNCircSeg() ) );
 	cfdMeshMgrPtr->GetGridDensityPtr()->SetGrowRatio( xmlFindDouble( root, "CFD_Mesh_Growth_Ratio", cfdMeshMgrPtr->GetGridDensityPtr()->GetGrowRatio() ) );
+	bool rl = xmlFindInt( root, "CFD_Mesh_Rigorous_Limiting", cfdMeshMgrPtr->GetGridDensityPtr()->GetRigorLimit() ) != 0;
+	cfdMeshMgrPtr->GetGridDensityPtr()->SetRigorLimit( rl );
 	cfdMeshMgrPtr->SetFarXScale( xmlFindDouble( root, "CFD_Far_Field_Scale_X", cfdMeshMgrPtr->GetFarXScale() ) );
 	cfdMeshMgrPtr->SetFarYScale( xmlFindDouble( root, "CFD_Far_Field_Scale_Y", cfdMeshMgrPtr->GetFarYScale() ) );
 	cfdMeshMgrPtr->SetFarZScale( xmlFindDouble( root, "CFD_Far_Field_Scale_Z", cfdMeshMgrPtr->GetFarZScale() ) );
@@ -1123,7 +1169,7 @@ void Aircraft::delGeom( Geom* geomPtr )
 	resetAttachedLabels(geomPtr);
 
 	//==== Remove All Parms and Parm Links That Ref Geom ====//
-	parmLinkMgrPtr->RemoveAllReferences( geomPtr );		
+	parmMgrPtr->RemoveAllReferences( geomPtr );
 
 	//==== Delete GeomPtr ====//
 	if ( geomPtr != vorGeom && geomPtr != userGeomPtr )		// Only One VorGeom - Dont Del
@@ -1141,7 +1187,7 @@ void Aircraft::delGeom( Geom* geomPtr )
 	setActiveGeom(NULL);
 
 	//==== Rebuild Parmeter Lists ====//
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 }
 
@@ -1163,7 +1209,20 @@ void Aircraft::copyGeomVec( vector< Geom* >& gVec )
 {
 	copyToClipBoard( gVec );
 }
-	
+
+void Aircraft::resetClipBoardPtrIDCollisions()
+{
+	int i, j;
+
+	for ( i = 0 ; i < (int)clipBoard.size() ; i++ )
+	{
+		for ( j = 0 ; j < (int)geomVec.size() ; j++ )
+		{
+			if ( clipBoard[i]->getPtrID() == geomVec[j]->getPtrID() )
+				clipBoard[i]->resetPtrID();  // Collision detected
+		}
+	}
+}
 
 void Aircraft::pasteClipBoard( )
 {
@@ -1213,7 +1272,7 @@ void Aircraft::pasteClipBoard( )
 		drawWin->redraw(); 
 	}
 
-	parmLinkMgrPtr->RebuildAll();
+	parmMgrPtr->RebuildAll();
 
 	//==== Print Hier ====//
 /*	for ( i = 0 ; i < geomVec.size() ; i++ )
@@ -2179,7 +2238,7 @@ void Aircraft::write_gmsh_files(const char* file_name)
 	}
 
 	fprintf(file_id, "$MeshFormat\n" );
-	fprintf(file_id, "2.2 0 %d\n", sizeof(double) );
+	fprintf(file_id, "2.2 0 %d\n", (int)sizeof(double) );
 	fprintf(file_id, "$EndMeshFormat\n" );
 
 
@@ -2744,7 +2803,7 @@ void Aircraft::write_felisa_file(const char* file_name)
 	geom_cnt += 6;
 
 	fprintf(dump_file, " %d       Number_Surfaces\n",geom_cnt);
-	fprintf(dump_file, "\n 0      Number_Exceptions\n",geom_cnt);
+	fprintf(dump_file, "\n 0      Number_Exceptions\n");
 
 	//==== Write Felisa Surfaces ====//
 	geom_cnt = 0;

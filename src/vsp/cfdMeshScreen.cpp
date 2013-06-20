@@ -33,6 +33,7 @@ CfdMeshScreen::CfdMeshScreen(ScreenMgr* mgr, Aircraft* airPtr)
 	ui->finalMeshButton->callback( staticScreenCB, this );
 	ui->viewMeshButton->callback( staticScreenCB, this );
 	ui->viewSourceButton->callback( staticScreenCB, this );
+	ui->rigorLimitButton->callback( staticScreenCB, this );
 	ui->halfMeshButton->callback( staticScreenCB, this );
 
 	ui->SourceNameInput->callback( staticScreenCB, this );
@@ -158,8 +159,8 @@ CfdMeshScreen::CfdMeshScreen(ScreenMgr* mgr, Aircraft* airPtr)
 	ui->triButton->callback( staticScreenCB, this );
 	ui->gmshButton->callback( staticScreenCB, this );
 	ui->srfButton->callback( staticScreenCB, this );
-	ui->datToggle->value(0);
-	ui->keyToggle->value(0);
+	ui->datToggle->value(1);
+	ui->keyToggle->value(1);
 	ui->objToggle->value(1);
 	ui->polyToggle->value(0);
 	ui->stlToggle->value(1);
@@ -361,6 +362,11 @@ void CfdMeshScreen::update()
 	else
 		cfdMeshUI->halfMeshButton->value(0);
 
+	if ( cfdMeshMgrPtr->GetGridDensityPtr()->GetRigorLimit() )
+		cfdMeshUI->rigorLimitButton->value(1);
+	else
+		cfdMeshUI->rigorLimitButton->value(0);
+
 	Stringc datname = cfdMeshMgrPtr->GetExportFileName( CfdMeshMgr::DAT_FILE_NAME );
 	cfdMeshUI->datName->value( truncateFileName(datname, 40 ) );
 	Stringc keyname = cfdMeshMgrPtr->GetExportFileName( CfdMeshMgr::KEY_FILE_NAME );
@@ -446,6 +452,13 @@ void CfdMeshScreen::screenCB( Fl_Widget* w )
 		else
 			cfdMeshMgrPtr->SetDrawSourceFlag( false );
 	}
+	else if ( w == cfdMeshUI->rigorLimitButton )
+	{
+		if ( cfdMeshUI->rigorLimitButton->value() )
+			cfdMeshMgrPtr->GetGridDensityPtr()->SetRigorLimit( true );
+		else
+			cfdMeshMgrPtr->GetGridDensityPtr()->SetRigorLimit( false );
+	}
 	else if ( w == cfdMeshUI->halfMeshButton )
 	{
 		if ( cfdMeshUI->halfMeshButton->value() )
@@ -467,14 +480,18 @@ void CfdMeshScreen::screenCB( Fl_Widget* w )
 		cfdMeshMgrPtr->UpdateSourcesAndWakes();
 		addOutputText( "Build Grid\n");
 		cfdMeshMgrPtr->BuildGrid();
-		addOutputText( "Build Target Map\n");
-		double minmap = cfdMeshMgrPtr->BuildTargetMap();
+
 		addOutputText( "Intersect\n");
 		cfdMeshMgrPtr->Intersect();
 		addOutputText( "Finished Intersect\n");
 //		cfdMeshMgrPtr->UpdateSourcesAndWakes();
+
+		addOutputText( "Build Target Map\n");
+		cfdMeshMgrPtr->BuildTargetMap( CfdMeshMgr::CFD_OUTPUT );
+
 		addOutputText( "InitMesh\n");
-		cfdMeshMgrPtr->InitMesh( minmap );
+		cfdMeshMgrPtr->InitMesh( );
+
 		addOutputText( "Remesh\n");
 		cfdMeshMgrPtr->Remesh( CfdMeshMgr::CFD_OUTPUT );
 		//addOutputText( "Triangle Quality\n");

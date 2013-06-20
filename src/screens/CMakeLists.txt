@@ -29,6 +29,7 @@ havocFlScreen.fl
 hrmFlScreen.fl
 hwbFlScreen.fl
 importFileScreen.fl
+keyHelpScreen.fl
 labelFlScreen.fl
 lightingScreen.fl
 mainScreen.fl
@@ -37,6 +38,7 @@ meshFlScreen.fl
 msWingFlScreen.fl
 parmFlScreen.fl
 parmLinkFlScreen.fl
+parmPickerFlScreen.fl
 podScreen.fl
 propFlScreen.fl
 scriptOutScreen.fl

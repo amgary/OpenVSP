@@ -13,6 +13,7 @@
 #include "cfdMeshScreen.h"
 #include "parmScreen.h"
 #include "parmLinkScreen.h"
+#include "parmPickerScreen.h"
 #include "feaStructScreen.h"
 #include "groupScreen.h"
 #include "wingScreen.h"
@@ -80,6 +81,7 @@ ScreenMgr::~ScreenMgr()
 	delete cfdMeshScreen;
 	delete parmScreen;
 	delete parmLinkScreen;
+	delete parmPickerScreen;
 	delete feaStructScreen;
 	delete labelScreen;
 	delete vorviewScreen;
@@ -141,6 +143,7 @@ void ScreenMgr::createGui()
 //	mainWinUI->MeshMenu->callback( staticMenuCB, this );
 	mainWinUI->CFDMeshGeomMenu->callback( staticMenuCB, this );
 	mainWinUI->ParmLinkMenu->callback( staticMenuCB, this );
+	mainWinUI->ParmPickMenu->callback( staticMenuCB, this );
 	mainWinUI->MassPropMenu->callback( staticMenuCB, this );
 	mainWinUI->AeroRefMenu->callback( staticMenuCB, this );
 //	mainWinUI->SliceMenu->callback( staticMenuCB, this );
@@ -166,6 +169,7 @@ void ScreenMgr::createGui()
 	mainWinUI->AdjustViewMenu->callback( staticMenuCB, this );
 	mainWinUI->AntialiasMenu->callback( staticMenuCB, this );
 	mainWinUI->TextureMenu->callback( staticMenuCB, this );
+	mainWinUI->ToggleAxisMenu->callback( staticMenuCB, this );
 
 	
 	mainWinUI->ScriptMenu->callback( staticMenuCB, this );
@@ -176,6 +180,7 @@ void ScreenMgr::createGui()
 
 	mainWinUI->ShowAbout->callback(staticMenuCB, this);
 	mainWinUI->ShowHelpWebsite->callback(staticMenuCB, this);
+	mainWinUI->KeyMouseHelpMenu->callback(staticMenuCB, this);
 
 	//==== Export File Window ====//
 	exportFileUI = new ExportFileUI();
@@ -340,6 +345,34 @@ void ScreenMgr::createGui()
 	aboutScreen->outputTextDisplay->buffer()->insert(1200,aboutText5);
 	aboutScreen->outputTextDisplay->wrap_mode(1, 65);
 
+	//==== Key Mouse Help Screem ====//
+	keyHelpScreen = new KeyHelpScreen();
+
+	keyHelpScreen->TextBrowser->add( "@bRotate\n" );
+	keyHelpScreen->TextBrowser->add( "  Left Button\n" );
+	keyHelpScreen->TextBrowser->add( "@bZoom\n" );
+	keyHelpScreen->TextBrowser->add( "  Middle Button\n" );
+	keyHelpScreen->TextBrowser->add( "  Left and Right Button\n" );
+	keyHelpScreen->TextBrowser->add( "  Control and Left Button\n" );
+	keyHelpScreen->TextBrowser->add( "  Meta (Mac-Command, Win-Windows) and Left Button\n" );
+	keyHelpScreen->TextBrowser->add( "@bTranslate\n" );
+	keyHelpScreen->TextBrowser->add( "  Right Button\n" );
+	keyHelpScreen->TextBrowser->add( "  Alt and Left Button\n" );
+	keyHelpScreen->TextBrowser->add( "  Scroll Wheel\n" );
+	keyHelpScreen->TextBrowser->add( "  Two-Finger Click & Drag\n" );
+	keyHelpScreen->TextBrowser->add( "@bCenter Model\n" );
+	keyHelpScreen->TextBrowser->add( "  Press c Key\n" );
+	keyHelpScreen->TextBrowser->add( "@bMove Rotation Center\n" );
+	keyHelpScreen->TextBrowser->add( "  Press r Key\n" );
+	keyHelpScreen->TextBrowser->add( "@bSave Model\n" );
+	keyHelpScreen->TextBrowser->add( "  Control s Key\n" );
+	keyHelpScreen->TextBrowser->add( "@bSave View\n" );
+	keyHelpScreen->TextBrowser->add( "  Shift F1-F4 Keys\n" );
+	keyHelpScreen->TextBrowser->add( "@bRestore Saved View\n" );
+	keyHelpScreen->TextBrowser->add( "  Press F1-F4 Keys\n" );
+	keyHelpScreen->TextBrowser->add( "@bRestore Preset Views\n" );
+	keyHelpScreen->TextBrowser->add( "  Press F5-F12 Keys\n" );
+
 	//==== Script Screen ====//
 	scriptUI = new ScriptUI();
 	scriptBuffer = new Fl_Text_Buffer();
@@ -408,6 +441,7 @@ void ScreenMgr::createGui()
 	cfdMeshScreen = new CfdMeshScreen( this, aircraftPtr );
 	parmScreen = new ParmScreen( this, aircraftPtr );
 	parmLinkScreen = new ParmLinkScreen( this, aircraftPtr );
+	parmPickerScreen = new ParmPickerScreen( this, aircraftPtr );
 	feaStructScreen = new FeaStructScreen( this, aircraftPtr );
 	labelScreen = new LabelScreen(this, aircraftPtr, glWin);
 	vorviewScreen = new VorviewScreen(this, aircraftPtr, glWin);
@@ -1055,10 +1089,19 @@ void ScreenMgr::menuCB( Fl_Widget* w )
 		s_parmlinkmgr(ScriptMgr::GUI);
 		scriptMgr->addLine("parmlink");
 	}
+	else if ( m == mainWinUI->ParmPickMenu )		// Parameter Picker
+	{
+		s_parmpickmgr(ScriptMgr::GUI);
+		scriptMgr->addLine("parmpick");
+	}
 	else if ( m == mainWinUI->TextureMenu )			// Texture Mgr Screen
 	{
 		s_texturemgr(ScriptMgr::GUI);
 		scriptMgr->addLine("texturemgr");
+	}
+	else if ( m == mainWinUI->ToggleAxisMenu )		// Texture Mgr Screen
+	{
+		glWin->currVWin->toggleAxisDraw();
 	}
 	else if ( m == mainWinUI->MassPropMenu )	// Mass Properties Stuff
 	{
@@ -1421,6 +1464,13 @@ void ScreenMgr::menuCB( Fl_Widget* w )
 	{
 		if ( aircraftPtr->getGeomVec().size() == 0 )
 			fl_alert("Create Some Geometry First");
+		else if ( aircraftPtr->getVorGeom() )
+		{
+			if ( aircraftPtr->getVorGeom()->vorlaxExeExists() )
+				vorviewScreen->show(NULL);
+			else
+				fl_alert("Vorlax Executable Does Not Exist");
+		}
 		else
 			vorviewScreen->show(NULL);
 	}
@@ -1495,6 +1545,10 @@ void ScreenMgr::menuCB( Fl_Widget* w )
 	else if ( m == mainWinUI->ShowAbout )
 	{
 		aboutScreen->UIWindow->show();
+	}
+	else if ( m == mainWinUI->KeyMouseHelpMenu  )
+	{
+		keyHelpScreen->UIWindow->show();
 	}
 	else if ( m == mainWinUI->ShowHelpWebsite )
 	{
@@ -1924,6 +1978,14 @@ void ScreenMgr::s_parmlinkmgr(int src)
 	}
 }
 
+void ScreenMgr::s_parmpickmgr(int src)
+{
+	if (src != ScriptMgr::SCRIPT)
+	{
+		parmPickerScreen->show();
+	}
+}
+
 void ScreenMgr::s_texturemgr(int src)
 {
 	if (src != ScriptMgr::SCRIPT)
@@ -2019,6 +2081,6 @@ char* ScreenMgr::FileChooser( const char* title, const char* filter )
 
 void ScreenMgr::MessageBox( const char* msg )
 {
-	fl_message( msg );
+	fl_message( "%s", msg );
 }
 

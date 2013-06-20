@@ -78,7 +78,6 @@ ISegChain.cpp
 labelGeom.cpp
 labelScreen.cpp
 main.cpp
-mapSource.cpp
 materialMgr.cpp
 Mesh.cpp
 meshGeom.cpp
@@ -88,8 +87,10 @@ msWingScreen.cpp
 parm.cpp
 parmLinkMgr.cpp
 parmLinkScreen.cpp
+parmPickerScreen.cpp
 parmScreen.cpp
 part.cpp
+PntNodeMerge.cpp
 propGeom.cpp
 propScreen.cpp
 screenMgr.cpp
@@ -175,8 +176,10 @@ ms_wing.h
 parm.h
 parmLinkMgr.h
 parmLinkScreen.h
+parmPickerScreen.h
 parmScreen.h
 part.h
+PntNodeMerge.h
 propGeom.h
 propScreen.h
 screenMgr.h

@@ -204,12 +204,65 @@ void SCurve::BorderTesselate( )
 	}
 }
 
-void SCurve::BuildDistTable( GridDensity* grid_den, SCurve* BCurve )
+void SCurve::InterpDistTable( double idouble, double &t, double &u, double &s, double &dsdi )
+{
+	int imax = target_vec.size() - 1;
+
+	int ifloor = floor( idouble );
+	int iceil = ceil( idouble );
+
+	if( iceil == ifloor )
+		iceil++;
+
+	double ifrac = idouble - ifloor;
+
+	if( iceil > imax )  // Should be equivalent to idouble > imax
+	{
+		iceil = imax;
+		ifloor = imax - 1;
+		ifrac = 1.0;
+	}
+
+	if( ifloor < 0 )
+	{
+		ifloor = 0;
+		iceil = 1;
+		ifrac = 0.0;
+	}
+
+
+	double tf = target_vec[ifloor];
+	double tc = target_vec[iceil];
+	t = tf + ifrac * ( tc - tf );
+
+	double uf = u_vec[ifloor];
+	double uc = u_vec[iceil];
+	u = uf + ifrac * ( uc - uf );
+
+	double sf = dist_vec[ifloor];
+	double sc = dist_vec[iceil];
+	dsdi = sc - sf;
+	s = sf + ifrac * dsdi;
+
+}
+
+void SCurve::BuildDistTable( GridDensity* grid_den, SCurve* BCurve, list< MapSource* > & splitSources )
 {
 	assert( m_Surf );
 
+	CleanupDistTable();
+
 	//==== Build U to Dist Table ====//
-	num_segs = 1000;
+	int nref = 10;
+	int nseglim = 10000;
+	num_segs = nref * m_UWCrv.get_num_sections() + 1;
+	if( num_segs > nseglim )
+	{
+		nref = nseglim / m_UWCrv.get_num_sections();
+		if( nref < 1 )
+			nref = 1;
+		num_segs = nref * m_UWCrv.get_num_sections() + 1;
+	}
 	double total_dist = 0.0;
 	vec3d uw = m_UWCrv.comp_pnt( 0 );
 	vec3d last_p = m_Surf->CompPnt( uw.x(), uw.y() );
@@ -230,6 +283,33 @@ void SCurve::BuildDistTable( GridDensity* grid_den, SCurve* BCurve )
 		dist_vec.push_back( total_dist );
 
 		last_p = p;
+	}
+
+	double grm1 = grid_den->GetGrowRatio() - 1.0;
+
+	// Indices of first and last points in table.
+	int indx[2] = { 0, num_segs - 1 };
+
+	list< MapSource* >::iterator ss;
+	for ( ss = splitSources.begin(); ss != splitSources.end(); ss++ )
+	{
+		vec3d pt = (*ss)->m_pt;
+		double str = (*ss)->m_str;
+
+		for ( int i = 0; i < 2; i++ ) // Loop over first and last points.
+		{
+			double r = dist( pt, pnt_vec[indx[i]] );
+			double targetstr = str + r * grm1;
+
+			if ( targetstr < target_vec[indx[i]] )
+				target_vec[indx[i]] = targetstr;
+			else
+			{
+				double targetrev = target_vec[indx[i]] + r * grm1;
+				if ( targetrev < str )
+					(*ss)->m_str = targetrev;
+			}
+		}
 	}
 }
 
@@ -293,69 +373,203 @@ void SCurve::TessRevIntegrate( vector< double > &utess)
 	TessIntegrate( -1, utess );
 }
 
+// Bisection method solver to find i,u corresponding to starget.
+//
+// starget	i		Target s input.
+// s		i/o		Initial s in, final s out.
+// ireal	i/o		Initial i in, final i out.
+// t		i/o		t at current point.  Passed in/out as optimization.
+// dsdi		i/o		ds/di at current point.  Passed in/out as optimization.
+// u		o		Final u out.
+
+bool SCurve::BisectFind( double starget, double &s, double &ireal, double &t, double &dsdi, double &u, int direction )
+{
+	double sold = s;
+	double irorig = ireal;
+
+	double tol = 1e-3;
+	double ds = abs(starget - sold);
+
+	double slower, supper;
+	double ilower, iupper;
+
+	if( direction < 0 ) // Descending, current point upper bound.
+	{
+		slower = 0.0;
+		ilower = 0.0;
+		supper = s;
+		iupper = ireal;
+	}
+	else // Ascending, current point lower bound.
+	{
+		slower = s;
+		ilower = ireal;
+		supper = dist_vec.back();
+		iupper = ( (double) dist_vec.size() ) - 1.0;
+	}
+
+	double imid, tmid, umid, smid, dsdimid;
+
+	imid = ( ilower + iupper ) / 2.0;
+
+	int iter = 0;
+	while( abs(supper - slower)/ds > tol )
+	{
+		InterpDistTable( imid, tmid, umid, smid, dsdimid );
+
+		if( smid < starget )
+		{
+			slower = smid;
+			ilower = imid;
+		}
+		else
+		{
+			supper = smid;
+			iupper = imid;
+		}
+		imid = ( ilower + iupper ) / 2.0;
+		iter++;
+	}
+
+	ireal = imid;
+	InterpDistTable( ireal, t, u, s, dsdi );
+
+	return true; // Failure no option for bisection.
+}
+
+// Newton's method solver to find i,u corresponding to starget.
+//
+// starget	i		Target s input.
+// s		i/o		Initial s in, final s out.
+// ireal	i/o		Initial i in, final i out.
+// t		i/o		t at current point.  Passed in/out as optimization.
+// dsdi		i/o		ds/di at current point.  Passed in/out as optimization.
+// u		o		Final u out.
+
+bool SCurve::NewtonFind( double starget, double &s, double &ireal, double &t, double &dsdi, double &u, int direction )
+{
+	double sold = s;
+	double irorig = ireal;
+
+	double ds = abs(starget - sold);
+
+	int itermax = 10;
+	double tol = 1e-3;
+
+	int iter = 0;
+	while( abs(s - starget)/ds > tol && iter < itermax )
+	{
+		double irold = ireal;
+		double di = - (s - starget) / dsdi;
+
+		ireal = ireal + di;
+
+		InterpDistTable( ireal, t, u, s, dsdi );
+
+		// Check to keep Newton's method from exploding.  If the solution is
+		// diverging, just move one segment in the indicated direction and
+		// continue with Newton's method from there.
+		if( abs(s-starget) > abs(sold-starget) )
+		{
+			if( di < 0 )
+				di = -1.0;
+			else
+				di = 1.0;
+
+			ireal = irold + di;
+
+			InterpDistTable( ireal, t, u, s, dsdi );
+		}
+
+		iter = iter + 1;
+	}
+
+	if( abs(s - starget) > tol )  // Failed to converge.  Reset to start point and return failure.
+	{
+		ireal = irorig;
+		InterpDistTable( ireal, t, u, s, dsdi );
+		return false;
+	}
+
+	return true;
+}
+
+
 void SCurve::TessIntegrate( int direction, vector< double > &utess)
 {
 	utess.clear();
 
-	double nprev = 0.0;
-	double uprev = 0.0;
+	int nsubstep = 5;
 
-	utess.push_back( 0.0 );
-
-	int nlast = 0;
-	double n = 0.0;
 	double dn;
 
-	int j;
-	// Start at i = 1 because ds for the first step is zero anyway.
-	for ( int i = 1 ; i < num_segs - 1; i++ )
-	{
-		if( direction < 0 )
-			j = num_segs - i - 1;
-		else
-			j = i;
+	if( direction < 0 )
+		dn = -1.0/( (double) nsubstep );
+	else
+		dn = 1.0/( (double) nsubstep );
 
-		double t = target_vec[j];
-		double ds = dist_vec[j] - dist_vec[j-1];
-		double u = u_vec[j];
+	int isub = 0;
 
-		if( direction < 0 )
-			u = 1.0-u;
+	int itermax = 10;
+	double tol = 1e-3;
 
-		dn = ds/t;
-		n += dn;
+	double imax = ( (double) dist_vec.size() ) - 1.0;
 
-		if( nlast != (int) n )
-		{
-			double denom = n - nprev;
-			double frac = 0.0;
-			if(denom)
-				frac = ( ( (int) n ) - nprev )/denom;
+	double smax = dist_vec.back();
 
-			double ut = uprev + frac * (u-uprev);
-
-			utess.push_back( ut );
-			nlast = (int) n;
-			n = nlast;
-			u = ut;
-		}
-
-		uprev = u;
-		nprev = n;
-	}
-	utess.push_back(1.0);
+	double ireal;
 
 	if( direction < 0 )
-	{
-		int nut = utess.size();
+		ireal = imax;
+	else
+		ireal = 0.0;
 
-		for( int i = 0; i < nut; i++)
-			utess[i] = 1.0 - utess[i];
+	double t, u, s, dsdi;
+	InterpDistTable( ireal, t, u, s, dsdi );
+
+	utess.push_back( u );
+
+	while( ireal <= imax && ireal >= 0.0)
+	{
+		double ds = t * dn;
+		double starget = s + ds;
+		double sold = s;
+
+		if( starget < 0.0 || starget > smax) // Reached end of integration, break out and force final point.
+			break;
+		else
+		{
+			if( !NewtonFind( starget, s, ireal, t, dsdi, u, direction ) )
+				BisectFind( starget, s, ireal, t, dsdi, u, direction );
+		}
+		isub = isub + 1;
+
+		// If we're at or beyond the last substep, add the point to the list.
+		// >= is used instead of == through an abundance of caution.  There is no
+		// reason that isub should ever be greater than nsubstep.
+		if( isub >= nsubstep)
+		{
+			utess.push_back( u );
+			isub = 0;
+		}
+	}
+
+	// Just in case, double check the final point.
+	if( direction < 0 )
+	{
+		if( utess.back() > 0.0 )
+			utess.push_back( 0.0 );
+	}
+	else
+	{
+		if( utess.back() < 1.0 )
+			utess.push_back( 1.0 );
 	}
 }
 
 void SCurve::SmoothTess()
 {
+
 	vector< double > UTessRev;
 	TessRevIntegrate( UTessRev );
 
@@ -403,95 +617,39 @@ void SCurve::UWTess()
 	}
 }
 
-double SCurve::CalcDensity( GridDensity* grid_den, SCurve* BCurve )
+void SCurve::SpreadDensity( SCurve* BCurve )
 {
-	BuildDistTable( grid_den, BCurve );
-
-	LimitTarget( grid_den );
-
-	return target_vec[0];
-}
-
-void SCurve::BuildEdgeSources( MSCloud &es_cloud, GridDensity* grid_den )
-{
-	// Tesselate curve using baseline density.
-	TessIntegrate();
-	SmoothTess();
-	UWTess();
-
-	vec3d uw = m_UWTess[0];
-	vec3d p0 = m_Surf->CompPnt( uw.x(), uw.y() );
-	vec3d p1;
-	for ( int i = 1 ; i < (int)m_UTess.size() ; i++ )
-	{
-		uw = m_UWTess[i];
-		p1 = m_Surf->CompPnt( uw.x(), uw.y() );
-
-		double d = dist( p0, p1 );
-		vec3d p = ( p1 + p0 ) * 0.5;
-
-		double *strptr = new double;
-		*strptr = d;
-
-		MapSource es = MapSource( p, strptr );
-
-		es_cloud.sources.push_back( es );
-
-		p0 = p1;
-	}
-
-	m_UTess.clear();
-	m_UWTess.clear();
-}
-
-void SCurve::ApplyEdgeSources( MSTree &es_tree, MSCloud &es_cloud, GridDensity* grid_den )
-{
-	double grm1 = grid_den->GetGrowRatio() - 1.0;
-
-	double rmax = grid_den->GetBaseLen() / ( grid_den->GetGrowRatio() - 1.0 );
-	double r2max = rmax * rmax;
-
-	SearchParams params;
-	params.sorted = false;
-
 	for ( int i = 0 ; i < num_segs ; i++ )
 	{
+		double u = u_vec[i];
 		double t = target_vec[i];
-		vec3d p1 = pnt_vec[i];
-
-		double *query_pt = p1.v;
-
-		MSTreeResults es_matches;
-
-		int nMatches = es_tree.radiusSearch( query_pt, r2max, es_matches, params );
-
-		for (int j = 0; j < nMatches; j++ )
-		{
-			int imatch = es_matches[j].first;
-			double r = sqrt( es_matches[j].second );
-
-			double str = *( es_cloud.sources[imatch].m_strptr );
-
-			double ts = str + grm1 * r;
-			t = min( t, ts );
-		}
-		target_vec[i] = t;
+		ApplyESSurface( u, t );
+		BCurve->ApplyESSurface( u, t );
 	}
 }
 
-void SCurve::Tesselate( MSTree &es_tree, MSCloud &es_cloud, GridDensity* grid_den )
+void SCurve::CalcDensity( GridDensity* grid_den, SCurve* BCurve, list< MapSource* > & splitSources )
 {
-	ApplyEdgeSources( es_tree, es_cloud, grid_den );
+	BuildDistTable( grid_den, BCurve, splitSources );
 
 	LimitTarget( grid_den );
+}
 
+void SCurve::ApplyESSurface( double u, double t )
+{
+	vec3d uw = m_UWCrv.comp_pnt( u );
+	m_Surf->ApplyES( uw, t );
+}
+
+
+void SCurve::Tesselate()
+{
 	TessIntegrate();
 	SmoothTess();
 	UWTess();
-
-	CleanupDistTable();
 }
 
+// This routine is currently unused.
 void SCurve::Tesselate( vector< vec3d > & target_pnts )
 {
 	assert( m_Surf );
@@ -551,13 +709,6 @@ void SCurve::Tesselate( vector< vec3d > & target_pnts )
 //if ( d > 0.01 )
 //	printf( "SCurve Tess Target %f %f \n", f0, f1 );
 	}
-
-
-//	if ( m_UTess.size() == 1 )
-//	{
-//int junk = 23;
-//
-//	}
 
 	//==== Reset Begin and End Points ====//
 	m_UTess.front()  = 0.0;

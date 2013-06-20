@@ -5,17 +5,16 @@
 
 //******************************************************************************
 //
-//   Map Source and KD-Tree
+//   Merge Near Pnts 
 //
-//   Rob McDonald 4/4/12
+//   J.R. Gloudemans 8/28/12
 //
 //******************************************************************************
 
-#ifndef MAPSOURCE_H
-#define MAPSOURCE_H
+#ifndef PNTNODEMERGE_H
+#define PNTNODEMERGE_H
 
 #include "vec3d.h"
-#include "GridDensity.h"
 
 #ifdef max
 #undef max
@@ -29,64 +28,40 @@
 
 #include <vector>
 using namespace std;
-
 using namespace nanoflann;
 
-struct MapSource;
-struct MSCloud;
+struct PntNode;
+struct PntNodeCloud;
 
-typedef KDTreeSingleIndexAdaptor< L2_Simple_Adaptor< double, MSCloud > ,MSCloud, 3 > MSTree;
+typedef KDTreeSingleIndexAdaptor< L2_Simple_Adaptor< double, PntNodeCloud > ,PntNodeCloud, 3 > PNTree;
+typedef vector< pair< size_t, double > > PNTreeResults;
 
-typedef vector< pair< size_t, double > > MSTreeResults;
-
-struct MapSource
+struct PntNode
 {
-	MapSource()
-	{
-		m_dominated = false;
-		m_maxvisited = -1;
-		m_surfid = -1;
-	};
-
-	MapSource( vec3d pt, double str, int surfid )
-	{
-		m_pt = pt;
-		m_str = str;
-		m_dominated = false;
-		m_maxvisited = -1;
-		m_surfid = surfid;
-	};
-
-	vec3d m_pt;
-	double m_str;
-	bool m_dominated;
-	int m_maxvisited;
-	int m_surfid;
+	PntNode()				{ m_Index = -1; m_UsedIndex = -1;}
+	PntNode( vec3d & p )	{ m_Index = -1; m_UsedIndex = -1; m_Pnt = p; }
+	vec3d m_Pnt;
+	int m_Index;
+	int m_UsedIndex;
 };
 
-
 // The data source fed into the KD-tree library must adhere to an interface.  The following
-// struct implements that interface for the edge source kd-tree.
+// struct implements that interface for the pnt kd-tree.
 
-struct MSCloud
+struct PntNodeCloud
 {
 	// Underlying storage a vector.
-	vector< MapSource* > sources;
-
-	double str;
-	double deltaT;
-	double grm1;
+	vector< PntNode > m_PntNodes;
 
 	// Must return the number of data points
-	inline size_t kdtree_get_point_count() const { return sources.size(); }
+	inline size_t kdtree_get_point_count() const { return m_PntNodes.size(); }
 
 	// Returns the distance between the vector "p1[0:size-1]" and the data point with index "idx_p2" stored in the class:
-	double kdtree_distance( const double *p1, const size_t idx_p2, size_t size) const
+	inline double kdtree_distance(const double *p1, const size_t idx_p2, size_t size) const
 	{
-		const double d0 = p1[0] - sources[idx_p2]->m_pt.x();
-		const double d1 = p1[1] - sources[idx_p2]->m_pt.y();
-		const double d2 = p1[2] - sources[idx_p2]->m_pt.z();
-
+		const double d0 = p1[0] - m_PntNodes[idx_p2].m_Pnt.x();
+		const double d1 = p1[1] - m_PntNodes[idx_p2].m_Pnt.y();
+		const double d2 = p1[2] - m_PntNodes[idx_p2].m_Pnt.z();
 		return d0*d0 + d1*d1 + d2*d2;
 	}
 
@@ -95,9 +70,9 @@ struct MSCloud
 	//  "if/else's" are actually solved at compile time.
 	inline double kdtree_get_pt(const size_t idx, int dim) const
 	{
-		if (dim==0) return sources[idx]->m_pt.x();
-		else if (dim==1) return sources[idx]->m_pt.y();
-		else return sources[idx]->m_pt.z();
+		if (dim==0) return m_PntNodes[idx].m_Pnt.x();
+		else if (dim==1) return m_PntNodes[idx].m_Pnt.y();
+		else return m_PntNodes[idx].m_Pnt.z();
 	}
 
 	// Optional bounding-box computation: return false to default to a standard bbox computation loop.
@@ -105,6 +80,13 @@ struct MSCloud
 	//   Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
 	template <class BBOX>
 	bool kdtree_get_bbox(BBOX &bb) const { return false; }
+
+	void AddPntNodes( vector< vec3d > & pnts );
+	bool UsedNode( int i );
+	int GetNodeUsedIndex( int i );
+
 };
+
+void IndexPntNodes( PntNodeCloud & cloud, double tol );
 
 #endif

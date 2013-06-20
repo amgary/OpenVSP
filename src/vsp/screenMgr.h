@@ -40,6 +40,7 @@
 #include "massPropScreen.h"
 #include "aeroRefScreen.h"
 #include "aboutScreen.h"
+#include "keyHelpScreen.h"
 
 #include "vspScreen.h"
 #include "vspGlWindow.h"
@@ -69,6 +70,7 @@ class FeaStructScreen;
 class Parm;
 class ParmScreen;
 class ParmLinkScreen;
+class ParmPickerScreen;
 class TextureMgrScreen;
 class CabinLayoutScreen;
 class SelectFileScreen;
@@ -148,6 +150,7 @@ public:
 	CfdMeshScreen* getCfdMeshScreen()		{ return cfdMeshScreen; }
 	ParmScreen* getParmScreen()				{ return parmScreen; }
 	ParmLinkScreen* getParmLinkScreen()		{ return parmLinkScreen; }
+	ParmPickerScreen* getParmPickerScreen()	{ return parmPickerScreen; }
 	FeaStructScreen* getFeaStructScreen()	{ return feaStructScreen; }
 	LabelScreen* getLabelScreen()			{ return labelScreen; }
 	VorviewScreen* getVorviewScreen()		{ return vorviewScreen; }
@@ -184,6 +187,7 @@ public:
 	void s_cfdmeshgeom(int src);
 	void s_texturemgr(int scr);
 	void s_parmlinkmgr(int src);
+	void s_parmpickmgr(int src);
 	void s_massprop(int src, int num);
 	void s_oldslice(int src, int num);
 	void s_awave(int src, int style, int num, double angle, int section, Stringc filename);
@@ -233,6 +237,7 @@ private:
 	CfdMeshScreen* cfdMeshScreen;
 	ParmScreen* parmScreen;
 	ParmLinkScreen* parmLinkScreen;
+	ParmPickerScreen* parmPickerScreen;
 	FeaStructScreen* feaStructScreen;
 	GroupScreen* groupScreen;
 	FuseScreen* fuseScreen;
@@ -251,6 +256,7 @@ private:
 	LabelScreen* labelScreen;
 	VorviewScreen* vorviewScreen;
 	AboutScreen* aboutScreen;
+	KeyHelpScreen* keyHelpScreen;
 
 	char labelStr[256];
 

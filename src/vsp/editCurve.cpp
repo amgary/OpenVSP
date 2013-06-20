@@ -108,6 +108,43 @@ EditCurve::~EditCurve()
 
 }
 
+void EditCurve::copy( EditCurve & iec )
+{
+	scaleX = iec.scaleX.get();
+	scaleY = iec.scaleY.get();
+	pntX   = iec.pntX.get();
+	pntY   = iec.pntY.get();
+	scaleTans = iec.scaleTans.get();
+	maxWidth = iec.maxWidth.get();
+	maxHeight = iec.maxHeight.get();
+
+	crv = iec.crv;
+	pntVec = iec.pntVec;
+	controlPntVec = iec.controlPntVec;
+
+	winWidth  = iec.winWidth;
+	winHeight = iec.winHeight;
+
+	winLeft = iec.winLeft;
+	winRight = iec.winRight;
+	winTop = iec.winTop;
+	winBot = iec.winBot;
+
+	symFlag = iec.symFlag;
+	shapeType = iec.shapeType;
+
+	lastScaleX = iec.lastScaleX;
+	lastScaleY = iec.lastScaleY;
+
+	rollerScaleFactor = iec.rollerScaleFactor;
+	drawScaleFactor = iec.drawScaleFactor;
+
+
+
+
+}
+
+
 void EditCurve::write(xmlNodePtr root)
 {
 	xmlAddIntNode( root, "Sym_Flag", symFlag);
@@ -454,6 +491,7 @@ herm_curve EditCurve::getHermCurve()
 
 void EditCurve::draw()
 {
+
 	int i;
 	int numPnts = crv.get_num_sections()*3 + 1;
 
@@ -577,6 +615,43 @@ int EditCurve::processKeyEvent()
 
 			if ( screenPtr )				// Update Roller Position
 				screenPtr->show();
+		}
+	}
+	else if ( key == 102 )		// "f" key
+	{
+		FILE* fp = fopen( "edit_curve.dat", "w" );
+		if ( fp )
+		{
+			fprintf(fp, "EditCurve\n");
+			int max_id = 0;
+			double max_x = -1.0e12;
+			vector< vec3d > pVec;
+			Bezier_curve bCrv = getBezierCurve();
+			for ( int isec = 0 ; isec < bCrv.get_num_sections() ; isec++ )
+			{
+				for ( int i = 0 ; i < 20 ; i++ )
+				{
+					double u = (double)i/(double)(19);
+					vec3d pnt = bCrv.comp_pnt( isec, u );
+					pVec.push_back( pnt );
+
+					if ( pnt.x() > max_x )
+					{
+						max_x = pnt.x();
+						max_id = (int)pVec.size()-1;
+					}
+				}
+			}
+			double off_x = 1.0-max_x;
+			for ( int i = max_id ; i >= 0 ; i-- )
+			{
+				fprintf( fp, "%f %f\n", pVec[i].x() + off_x, pVec[i].y() );
+			}
+			for ( int i = (int)(pVec.size()-1) ; i >= max_id ; i-- )
+			{
+				fprintf( fp, "%f %f\n", pVec[i].x() + off_x, pVec[i].y() );
+			}
+			fclose( fp );
 		}
 	}
 

@@ -170,6 +170,7 @@ public:
 
 	double MatchDist( ISeg* s );
 	double ChainDist( ISegChain* B );
+	bool Match( ISegChain* B );
 
 	void Intersect( Surf* surfPtr, ISegChain* B );
 
@@ -186,10 +187,13 @@ public:
 	void TransferTess();
 	void ApplyTess();
 
-	double CalcDensity( GridDensity* grid_den );
-	void BuildES( MSCloud &es_cloud, GridDensity* grid_den );
-	void Tessellate( MSTree &es_tree, MSCloud &es_cloud, GridDensity* grid_den );
+	void SpreadDensity( );
+	void CalcDensity( GridDensity* grid_den, list< MapSource* > & splitSources );
+	void Tessellate();
 	void TessEndPts();
+
+	virtual ISegChain* GetWakeAttachChain()				{ return m_WakeAttachChain; }
+	virtual void SetWakeAttachChain( ISegChain* c )		{ m_WakeAttachChain = c; }
 
 	void BuildBoxes();
 
@@ -198,6 +202,8 @@ public:
 	bool Valid();
 
 	bool m_BorderFlag;
+
+	ISegChain* m_WakeAttachChain;
 
 	deque < ISeg* > m_ISegDeque;
 
