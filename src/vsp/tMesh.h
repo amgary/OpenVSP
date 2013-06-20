@@ -170,6 +170,7 @@ public:
 	virtual void splitTri(int meshFlag = 0);				// Split Tri to Fit ISect Edges 
 	virtual void triangulateSplit( int flattenAxis );
 	virtual void niceTriSplit( int flattenAxis );
+	virtual vec3d computeCenter() { return (n0->pnt + n1->pnt + n2->pnt)/3.0; }
 	virtual double computeArea()			{	return area(n0->pnt, n1->pnt, n2->pnt); }
 	virtual double computeAwArea()	
 	{

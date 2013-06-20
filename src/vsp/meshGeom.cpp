@@ -541,6 +541,20 @@ void MeshGeom::buildNascartMesh(int partOffset)
 {
 	int m, s, t;
 
+	// Hard Coded Wing variables //
+	int numSecs = 5;
+	int idOff = NULL, i;
+	double yOff = .0001; // y Offset added to wing so intersect doesn't get mad
+	double semispan = 5.9161;
+	vector < double > secs;
+	secs.push_back(0+yOff);
+	vec3d center;
+	for ( i = 0; i < numSecs; i++)
+	{
+		secs.push_back((semispan/numSecs)*(i+1)+yOff); // Assumming evenly spaced sections
+	}
+	// ====== //
+
 	nascartTriVec.clear();
 	nascartNodeVec.clear();
 
@@ -556,15 +570,34 @@ void MeshGeom::buildNascartMesh(int partOffset)
 				{
 					if ( !tri->splitVec[s]->interiorFlag )
 					{
-						tri->splitVec[s]->id = partOffset+m+1;
+						center = tri->splitVec[s]->computeCenter();
+						for ( i = 0; i < numSecs; i++ )
+						{
+							if (abs(center.y()) > secs[i] && abs(center.y()) < secs[i+1] )
+								idOff = i;
+						}
+
+						if (idOff == NULL)
+							idOff = 0;
+						tri->splitVec[s]->id = partOffset+idOff+1;
 						nascartTriVec.push_back( tri->splitVec[s] );
+						idOff == NULL;
 					}
 				}
 			}
 			else if ( !tri->interiorFlag )
 			{
-				tri->id = partOffset+m+1;
+				center = tri->computeCenter();
+				for ( i = 0; i < numSecs; i++ )
+				{
+					if (abs(center.y()) > secs[i] && abs(center.y()) < secs[i+1] )
+						idOff = i;
+				}
+				if (idOff == NULL)
+					idOff = 0;
+				tri->id = partOffset+idOff+1;
 				nascartTriVec.push_back( tri );
+				idOff == NULL;
 			}
 		}
 	}
