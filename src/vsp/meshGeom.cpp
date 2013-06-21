@@ -599,6 +599,7 @@ void MeshGeom::buildNascartMesh(int partOffset)
 					}
 				else
 					idOff = 0;
+
 				if (idOff == NULL)
 					idOff = 0;
 				tri->id = partOffset+idOff+1;
