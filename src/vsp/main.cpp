@@ -107,6 +107,8 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 	int cfdMeshFlag = 0;
 	int setTempDirFlag = 0;
 	Stringc tempDirName;
+	int validateFileFlag = 0;
+	int validFile = 0;
 	double cfdMeshScale = 1.0;
 	int cfdDefaultSourcesFlag = 1;
 	double Mach,sliceAngle;
@@ -282,6 +284,9 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 			   }
 		   }
 	   }
+	   if ( strcmp(argv[i], "-validate") == 0 ) {
+			validateFileFlag = 1;
+	   }
 
        if ( strcmp(argv[i],"-help") == 0 ) 
        {
@@ -314,6 +319,7 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 		 printf("  -des filename      Set variables according to *.des file \n");
 		 printf("  -xddm filename     Set variables according to *.xddm file \n");
 		 printf("  -tempdir pathname  Set the path name of the dir to write temp files\n");
+		 printf("  -validate          Check if file is valid ( Returns 0 for valid,  1 for invalid)\n");
 		 printf("  -outname type name Set the filenames for output where type = \n");
 		 printf("                      %s, %s, %s, %s, \n", outFileTypes[0], outFileTypes[1], outFileTypes[2], outFileTypes[3] );
 		 printf("                      %s, %s, %s, %s, \n", outFileTypes[4], outFileTypes[5], outFileTypes[6], outFileTypes[7] );
@@ -394,9 +400,18 @@ int batchMode(int argc, char *argv[], Aircraft* airPtr)
 	//    ram_file_name.concatenate(".vsp");
 
 		//==== Check for File ====//
-		airPtr->openFile(ram_file_name);
+		validFile = airPtr->openFile(ram_file_name);
 		airPtr->setActiveGeom( 0 );
 		airPtr->update_bbox();
+
+		if ( validateFileFlag )
+		{
+			int vsp_file_ver = airPtr->get_vsp_version();
+			if ( validFile && ( ( vsp_file_ver > 0 && vsp_file_ver < 4) || airPtr->get_version() > 0) )
+				exit(0);
+			else
+				exit(1);
+		}
 
 		// Apply design variables before any geometry operations.
 		if ( desFlag )

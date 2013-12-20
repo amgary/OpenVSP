@@ -216,7 +216,8 @@ public:
 	void fastDrawFlagOn();
 	void fastDrawFlagOff();
 
-	int get_version()						{ return oldFileVersion; }
+	int get_version()						{ return oldFileVersion; } // Ram Version
+	int get_vsp_version() 					{ return version; }
 	Geom* get_ref_geom()					{ return 0; }	//jrg fix
 	Geom* get_trim_geom()					{ return 0; }	//jrg fix
 
