@@ -19,6 +19,10 @@ using std::vector;
 
 #include "eli/code_eli.hpp"
 
+#ifdef Success
+#undef Success
+#endif
+
 #include "eli/geom/curve/bezier.hpp"
 #include "eli/geom/curve/piecewise.hpp"
 
