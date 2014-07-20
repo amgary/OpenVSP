@@ -59,6 +59,7 @@ class WingGeom;
 #define MS_A_TC_RC  5
 #define MS_TR_S_A   6
 #define MS_AR_A_RC  7
+#define MS_SLE_STE_RC_S 8
 
 #define DEGREES_PER_AF (8.0)
 #define MAX_AF_PER_BLEND (9)
@@ -73,6 +74,7 @@ public:
   virtual void fillDependData();
   virtual double tan_sweep_at(double loc, int sym_code);
   virtual double tan_sweep_at(double loc, int sym_code, double swp);
+  virtual double tan_sweep_given_le(double le_swp);
   virtual double tan_sweep_at(double curr_loc, double new_loc, int sym_code);
 
   virtual void SetGeomPtr( Geom* geomPtr );
@@ -99,6 +101,8 @@ public:
   Parm* get_rc()					{ return &rc; }
   Parm* get_sweep()					{ return &sweep; }
   Parm* get_sweepLoc()				{ return &sweepLoc; }
+  Parm* get_te_sweep()              { return &te_sweep; }
+  Parm* get_le_sweep()              { return &le_sweep; }
 
   Parm* get_twist()					{ return &twist; }
   Parm* get_twistLoc()				{ return &twistLoc; }
@@ -115,6 +119,8 @@ public:
   double span_val()					{ return span(); }
   double tc_val()					{ return tc(); }
   double rc_val()					{ return rc(); }
+  double le_sweep_val()             { return le_sweep(); }
+  double te_sweep_val()             { return te_sweep(); }
   double sweep_val()				{ return sweep(); }
   double sweepLoc_val()				{ return sweepLoc(); }
 
@@ -133,6 +139,8 @@ public:
   void span_set( double v )			{ span.set( v ); }
   void tc_set( double v )			{ tc.set( v ); }
   void rc_set( double v )			{ rc.set( v ); }
+  void le_sweep_set( double v )     { le_sweep.set( v ); }
+  void te_sweep_set( double v )     { te_sweep.set( v ); }
   void sweep_set( double v )		{ sweep.set( v ); }
   void sweepLoc_set( double v )		{ sweepLoc.set( v ); }
 
@@ -163,6 +171,9 @@ private:
   Parm rc;		// Root Chord
   Parm sweep;
   Parm sweepLoc;	// Sweep Location
+
+  Parm te_sweep;
+  Parm le_sweep;
 
   Parm twist;
   Parm twistLoc;
@@ -256,6 +267,8 @@ public:
    Parm* get_sect_tc()					{ return( sects[currSect].get_tc() ); }
    Parm* get_sect_sweep()				{ return( sects[currSect].get_sweep() ); }
    Parm* get_sect_sweep_loc()			{ return( sects[currSect].get_sweepLoc() ); }
+   Parm* get_sect_te_sweep()            { return( sects[currSect].get_te_sweep() ); }
+   Parm* get_sect_le_sweep()            { return( sects[currSect].get_le_sweep() ); }
    double get_sect_ref_sweep_loc()		{ return( sects[currSect].refSweepLoc ); }
    Parm* get_sect_twist()				{ return( sects[currSect].get_twist() ); }
    Parm* get_sect_twist_loc()			{ return( sects[currSect].get_twistLoc() ); }

@@ -83,6 +83,10 @@ WingSect::WingSect()
   sweep.set_lower_upper(-85.0, 85.0);
   sweepLoc.initialize( NULL, UPD_MSW_SECTS, "Sweep_Location", sweepLoc() );
   sweepLoc.set_lower_upper(0.0, 1.0);
+  te_sweep.initialize(NULL, UPD_MSW_SECTS, "TE_Sweep", 0.0);
+  te_sweep.set_lower_upper(-85.0,85.0);
+  le_sweep.initialize(NULL,UPD_MSW_SECTS, "LE_Sweep",0.0);
+  le_sweep.set_lower_upper(-85.0,85.0);
   refSweepLoc = sweepLoc();
   twist.initialize( NULL, UPD_MSW_SECTS, "Twist", twist() );
   twist.set_lower_upper(-45.0, 45.0);
@@ -132,6 +136,8 @@ vector< Parm* > WingSect::GetLinkableParms()
 	pVec.push_back( &dihed_crv2 );
 	pVec.push_back( &dihed_crv1_str );
 	pVec.push_back( &dihed_crv2_str );
+	pVec.push_back( &le_sweep);
+	pVec.push_back( &te_sweep);
 
 	return pVec;
 }
@@ -145,48 +151,78 @@ void WingSect::fillDependData()
         span = sqrt( ar()*area() );
         rc   = (2.0*span()) / ( ar()*(1.0+tr()) );
         tc   = tr()*rc();
+        le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
+        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_AR_TR_S:
         area = (span() * span()) / ar();
         rc   = (2.0*span()) / ( ar()*(1.0+tr()) );
         tc   = tr()*rc();
+        le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
+        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_AR_TR_TC:
         rc   = tc()/tr();
         span = 0.5*ar()*rc()*(1.0+tr());
         area = (span() * span()) / ar();
+        le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
+        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_AR_TR_RC:
         tc   = tr()*rc();
         span = 0.5*ar()*rc()*(1.0+tr());
         area = (span() * span()) / ar();
+        le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
+        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_S_TC_RC:
         tr   = tc()/rc();
         ar   = 2.0*span()/( rc()*(1.0+tr()) );
         area = (span() * span()) / ar();
+        le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
+        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_A_TC_RC:
         tr    = tc()/rc();
         ar    = 2.0*span()/( rc()*(1.0+tr()) );
         span  = sqrt( ar()*area() );
+        le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
+        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_TR_S_A:
         ar = (span() * span()) / area();
         rc = (2.0*span()) / ( ar()*(1.0+tr()) );
         tc = tr()*rc();
+        le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
+        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_AR_A_RC:
 		span = sqrt( ar() * area());
         tr = (2.0*span())/(ar()*rc()) - 1.0;
         tc = tr()*rc();
+        le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
+        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
+      break;
+
+      case MS_SLE_STE_RC_S:
+    	tc = rc()-span()*(tan(le_sweep()*DEG_2_RAD) + tan(te_sweep()*DEG_2_RAD));
+    	if ( tc() <= 0.0001 )
+    	{
+    		tc = 0.0001;
+    		span = (-tc()+rc())/(tan(le_sweep()*DEG_2_RAD) + tan(te_sweep()*DEG_2_RAD));
+    	}
+    	tr = tc()/rc();
+    	ar   = 2.0*span()/( rc()*(1.0+tr()) );
+    	area = (span() * span()) / ar();
+    	sweep = atan( tan_sweep_given_le( le_sweep() ) )*RAD_2_DEG;
+
       break;
 
     }
@@ -200,6 +236,14 @@ double WingSect::tan_sweep_at(double loc, int sym_code, double swp )
             ( (loc-sweepLoc()) * ((1.0-tr())/(1.0+tr())) );
 
   return ( tan_sweep_at );
+}
+
+double WingSect::tan_sweep_given_le( double le_swp )
+{
+	double tan_sweep = tan(le_swp*DEG_2_RAD);
+	double tan_sweep_at = tan_sweep - (2.0/ar())*
+	            ( (sweepLoc()) * ((1.0-tr())/(1.0+tr())) );
+	return ( tan_sweep_at );
 }
 
 
@@ -246,36 +290,49 @@ void WingSect::SetDriver(int driver_in)
       case AR_TR_A:
         ar.activate();		tr.activate();		area.activate();
         span.deactivate();  rc.deactivate();	tc.deactivate();
+        te_sweep.deactivate(); le_sweep.deactivate(); sweep.activate();
       break;
 
       case AR_TR_S:
         ar.activate();		tr.activate();			span.activate();
         area.deactivate();  rc.deactivate();		tc.deactivate();
+        te_sweep.deactivate(); le_sweep.deactivate(); sweep.activate();
       break;
 
       case AR_TR_TC:
         ar.activate();		tr.activate();			tc.activate();
         area.deactivate();  rc.deactivate();		span.deactivate();
+        te_sweep.deactivate(); le_sweep.deactivate(); sweep.activate();
       break;
 
       case AR_TR_RC:
         ar.activate();		tr.activate();			rc.activate();
         area.deactivate();  tc.deactivate();		span.deactivate();
+        te_sweep.deactivate(); le_sweep.deactivate(); sweep.activate();
       break;
 
       case S_TC_RC:
         span.activate();    tc.activate();			rc.activate();
         tr.deactivate();	ar.deactivate();		area.deactivate();
+        te_sweep.deactivate(); le_sweep.deactivate(); sweep.activate();
      break;
 
       case A_TC_RC:
         area.activate();    tc.activate();			rc.activate();
         tr.deactivate();	ar.deactivate();		span.deactivate();
+        te_sweep.deactivate(); le_sweep.deactivate(); sweep.activate();
       break;
 
       case TR_S_A:
         tr.activate();		span.activate();        area.activate();
         ar.deactivate();	rc.deactivate();		tc.deactivate();
+        te_sweep.deactivate(); le_sweep.deactivate(); sweep.activate();
+      break;
+
+      case MS_SLE_STE_RC_S:
+    	  te_sweep.activate(); le_sweep.activate(); rc.activate(); span.activate();
+    	  ar.deactivate();     tc.deactivate();     area.deactivate(); tr.deactivate();
+    	  sweep.deactivate();
       break;
 
       default:
@@ -1289,6 +1346,8 @@ void Ms_wing_geom::write(xmlNodePtr root)
     xmlAddDoubleNode( sec_node, "Span",     sects[i].span_val() );
     xmlAddDoubleNode( sec_node, "TC",       sects[i].tc_val() );
     xmlAddDoubleNode( sec_node, "RC",       sects[i].rc_val() );
+    xmlAddDoubleNode( sec_node, "LE_Sweep", sects[i].le_sweep_val() );
+    xmlAddDoubleNode( sec_node, "TE_Sweep", sects[i].te_sweep_val() );
     xmlAddDoubleNode( sec_node, "Sweep",    sects[i].sweep_val() );
     xmlAddDoubleNode( sec_node, "SweepLoc", sects[i].sweepLoc_val() );
     xmlAddDoubleNode( sec_node, "Twist",    sects[i].twist_val() );
@@ -1383,6 +1442,8 @@ void Ms_wing_geom::read(xmlNodePtr root)
       ws.span_set( xmlFindDouble( sec_node, "Span", ws.span_val() ) );
       ws.tc_set( xmlFindDouble( sec_node, "TC", ws.tc_val() ) );
       ws.rc_set( xmlFindDouble( sec_node, "RC", ws.rc_val() ) );
+      ws.le_sweep_set( xmlFindDouble( sec_node, "LE_Sweep", ws.le_sweep_val() ) );
+      ws.te_sweep_set( xmlFindDouble( sec_node, "TE_Sweep", ws.te_sweep_val() ) );
       ws.sweep_set( xmlFindDouble( sec_node, "Sweep", ws.sweep_val() ) );
       ws.sweepLoc_set( xmlFindDouble( sec_node, "SweepLoc", ws.sweepLoc_val() ) );
 	  ws.refSweepLoc = ws.sweepLoc_val();

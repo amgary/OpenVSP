@@ -82,6 +82,10 @@ protected:
 	Input* sweepInput;
 	Slider* sweepLocSlider;
 	Input* sweepLocInput;
+	Slider* le_sweepSlider;
+	Input* le_sweepInput;
+	Slider* te_sweepSlider;
+	Input* te_sweepInput;
 	Slider* twistSlider;
 	Input* twistInput;
 	Slider* twistLocSlider;
@@ -139,6 +143,8 @@ protected:
 	ParmButton* spanButton;
 	ParmButton* TCButton;
 	ParmButton* RCButton;
+	ParmButton* LESButton;
+	ParmButton* TESButton;
 
 	ParmButton* sweepButton;
 	ParmButton* sweepLocButton;

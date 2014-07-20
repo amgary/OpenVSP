@@ -57,6 +57,10 @@ MsWingScreen::MsWingScreen(ScreenMgr* mgr) : CompScreen( mgr )
 	TCInput = new Input( this, ui->TCInput );
 	RCSlider = new Slider_adj_range(this, ui->RCSlider, ui->RCButtonL, ui->RCButtonR, 10.0 );
 	RCInput = new Input( this, ui->RCInput );
+	le_sweepSlider = new Slider_adj_range(this,ui->LESSlider, ui->LESButtonL, ui->LESButtonR, 30);
+	le_sweepInput = new Input( this, ui->LESInput );
+	te_sweepSlider = new Slider_adj_range(this,ui->TESSlider, ui->TESButtonL, ui->TESButtonR, 30);
+	te_sweepInput = new Input( this, ui->TESInput );
 
 	msWingUI->driverChoice->callback( staticScreenCB, this );
 
@@ -158,6 +162,8 @@ MsWingScreen::MsWingScreen(ScreenMgr* mgr) : CompScreen( mgr )
 	spanButton = new ParmButton( this, ui->spanButton );
 	TCButton = new ParmButton( this, ui->TCButton );
 	RCButton = new ParmButton( this, ui->RCButton );
+	TESButton = new ParmButton( this, ui->TESButton );
+	LESButton = new ParmButton( this, ui->LESButton );
 
 	sweepButton = new ParmButton( this, ui->sweepButton );
 	sweepLocButton = new ParmButton( this, ui->sweepLocButton );
@@ -257,6 +263,10 @@ void MsWingScreen::show(Geom* geomPtr)
 	sweepInput->set_parm_ptr( currGeom->get_sect_sweep() );
 	sweepLocSlider->set_parm_ptr( currGeom->get_sect_sweep_loc() );
 	sweepLocInput->set_parm_ptr( currGeom->get_sect_sweep_loc() );
+	le_sweepSlider->set_parm_ptr( currGeom->get_sect_le_sweep() );
+	le_sweepInput->set_parm_ptr( currGeom->get_sect_le_sweep() );
+	te_sweepSlider->set_parm_ptr( currGeom->get_sect_te_sweep() );
+	te_sweepInput->set_parm_ptr( currGeom->get_sect_te_sweep() );
 	twistSlider->set_parm_ptr( currGeom->get_sect_twist() );
 	twistInput->set_parm_ptr( currGeom->get_sect_twist() );
 	twistLocSlider->set_parm_ptr( currGeom->get_sect_twist_loc() );
@@ -345,6 +355,8 @@ void MsWingScreen::show(Geom* geomPtr)
 
 	sweepButton->set_parm_ptr( ws->get_sweep() );
 	sweepLocButton->set_parm_ptr( ws->get_sweepLoc() );
+	LESButton->set_parm_ptr( ws->get_le_sweep() );
+	TESButton->set_parm_ptr( ws->get_te_sweep() );
 	twistButton->set_parm_ptr( ws->get_twist() );
 	twistLocButton->set_parm_ptr( ws->get_twistLoc()  );
 
@@ -437,7 +449,9 @@ void MsWingScreen::screenCB( Fl_Widget* w)
 	CompScreen::screenCB( w );
 	if ( w == msWingUI->driverChoice )
 	{
-		currGeom->set_driver( msWingUI->driverChoice->value() );
+		int d = msWingUI->driverChoice->value();
+		if ( d == 7 ) d++;
+		currGeom->set_driver( d );
 		
 		switch (currGeom->get_driver())
 		{

@@ -1,5 +1,5 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0103 
+version 1.0302 
 header_name {.h} 
 code_name {.cxx}
 class MsWingUI {open
@@ -8,10 +8,10 @@ class MsWingUI {open
   } {
     Fl_Window UIWindow {
       label {Multi Section Wing Geom} open
-      xywh {654 199 285 566} color 45 resizable visible
+      xywh {654 199 285 566} type Double color 45 resizable visible
     } {
       Fl_Tabs MenuTabs {open
-        xywh {5 25 275 535}
+        xywh {5 25 280 535}
       } {
         Fl_Group genGroup {
           label Gen open selected
@@ -293,19 +293,19 @@ class MsWingUI {open
           Fl_Choice symmetryChoice {open
             xywh {200 230 75 20} down_box BORDER_BOX
           } {
-            menuitem noneSymMenu {
+            MenuItem noneSymMenu {
               label { None}
               xywh {40 40 100 20} labelfont 1
             }
-            menuitem xySymMenu {
+            MenuItem xySymMenu {
               label { XY}
               xywh {40 40 100 20} labelfont 1
             }
-            menuitem xzSymMenu {
+            MenuItem xzSymMenu {
               label { XZ}
               xywh {40 40 100 20} labelfont 1
             }
-            menuitem yzSymMenu {
+            MenuItem yzSymMenu {
               label { YZ}
               xywh {40 40 100 20} labelfont 1
             }
@@ -472,7 +472,7 @@ class MsWingUI {open
         }
         Fl_Group sectGroup {
           label Sect open
-          xywh {5 50 275 510} selection_color 55 labelfont 1 labelsize 12 labelcolor 4 hide
+          xywh {5 50 280 510} selection_color 55 labelfont 1 labelsize 12 labelcolor 4 hide
         } {
           Fl_Button lengthButton {
             label {Driver:}
@@ -481,33 +481,37 @@ class MsWingUI {open
           Fl_Choice driverChoice {open
             xywh {130 220 145 20} down_box BORDER_BOX
           } {
-            menuitem ARTRAreaMenu {
+            MenuItem ARTRAreaMenu {
               label {AR-TR-Area}
               xywh {5 5 100 20} labelfont 1
             }
-            menuitem ARTRSpanMenu {
+            MenuItem ARTRSpanMenu {
               label {AR-TR-Span}
               xywh {15 15 100 20} labelfont 1
             }
-            menuitem ARTRTCMenu {
+            MenuItem ARTRTCMenu {
               label {AR-TR-TC}
               xywh {25 25 100 20} labelfont 1
             }
-            menuitem ARTRRCMenu {
+            MenuItem ARTRRCMenu {
               label {AR-TR-RC}
               xywh {35 35 100 20} labelfont 1
             }
-            menuitem SpanTCRCMenu {
+            MenuItem SpanTCRCMenu {
               label {Span-TC-RC}
               xywh {45 45 100 20} labelfont 1
             }
-            menuitem AreaTCRCMenu {
+            MenuItem AreaTCRCMenu {
               label {Area-TC-RC}
               xywh {55 55 100 20} labelfont 1
             }
-            menuitem TRSpanAreaMenu {
+            MenuItem TRSpanAreaMenu {
               label {TR-Span-Area}
               xywh {65 65 100 20} labelfont 1
+            }
+            MenuItem LESTESSpanRCMenu {
+              label {LES-TES-Span-RC}
+              xywh {75 75 100 20} labelfont 1
             }
           }
           Fl_Button ARButton {
@@ -620,7 +624,7 @@ class MsWingUI {open
           }
           Fl_Button {} {
             label {Projected Span}
-            xywh {10 365 200 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
+            xywh {10 401 200 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
           }
           Fl_Box {} {
             label {Section ID:}
@@ -657,79 +661,79 @@ class MsWingUI {open
             xywh {215 110 60 20} textsize 13
           }
           Fl_Output projSpanOutput {
-            xywh {210 365 65 20} textsize 12
+            xywh {210 401 65 20} textsize 12
           }
           Fl_Button twistButton {
             label WashOut
-            xywh {10 455 80 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
+            xywh {10 487 80 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
           }
           Fl_Slider twistSlider {
-            xywh {100 455 100 20} type {Horz Knob} box THIN_DOWN_BOX color 7 selection_color 15
+            xywh {100 487 100 20} type {Horz Knob} box THIN_DOWN_BOX color 7 selection_color 15
           }
           Fl_Input twistInput {
-            xywh {210 455 65 20} type Float box THIN_DOWN_BOX labelsize 12 when 8 textsize 12
+            xywh {210 487 65 20} type Float box THIN_DOWN_BOX labelsize 12 when 8 textsize 12
           }
           Fl_Repeat_Button twistButtonL {
             label {<}
-            xywh {90 455 10 20} box THIN_UP_BOX labelcolor 4
+            xywh {90 487 10 20} box THIN_UP_BOX labelcolor 4
           }
           Fl_Repeat_Button twistButtonR {
             label {>}
-            xywh {200 455 10 20} box THIN_UP_BOX labelcolor 4
+            xywh {200 487 10 20} box THIN_UP_BOX labelcolor 4
           }
           Fl_Button twistLocButton {
             label {WashOut Loc}
-            xywh {10 475 80 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
+            xywh {10 507 80 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
           }
           Fl_Slider twistLocSlider {
-            xywh {100 475 100 20} type {Horz Knob} box THIN_DOWN_BOX color 7 selection_color 15
+            xywh {100 507 100 20} type {Horz Knob} box THIN_DOWN_BOX color 7 selection_color 15
           }
           Fl_Input twistLocInput {
-            xywh {210 475 65 20} type Float box THIN_DOWN_BOX labelsize 12 when 8 textsize 12
+            xywh {210 507 65 20} type Float box THIN_DOWN_BOX labelsize 12 when 8 textsize 12
           }
           Fl_Repeat_Button twistLocButtonL {
             label {<}
-            xywh {90 475 10 20} box THIN_UP_BOX labelcolor 4
+            xywh {90 507 10 20} box THIN_UP_BOX labelcolor 4
           }
           Fl_Repeat_Button twistLocButtonR {
             label {>}
-            xywh {200 475 10 20} box THIN_UP_BOX labelcolor 4
+            xywh {200 507 10 20} box THIN_UP_BOX labelcolor 4
           }
           Fl_Button sweepButton {
             label Sweep
-            xywh {10 390 80 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
+            xywh {10 422 80 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
           }
           Fl_Slider sweepSlider {
-            xywh {100 390 100 20} type {Horz Knob} box THIN_DOWN_BOX color 7 selection_color 15
+            xywh {100 422 100 20} type {Horz Knob} box THIN_DOWN_BOX color 7 selection_color 15
           }
           Fl_Input sweepInput {
-            xywh {210 390 65 20} type Float box THIN_DOWN_BOX labelsize 12 when 8 textsize 12
+            xywh {210 422 65 20} type Float box THIN_DOWN_BOX labelsize 12 when 8 textsize 12
           }
           Fl_Repeat_Button sweepButtonL {
             label {<}
-            xywh {90 390 10 20} box THIN_UP_BOX labelcolor 4
+            xywh {90 422 10 20} box THIN_UP_BOX labelcolor 4
           }
           Fl_Repeat_Button sweepButtonR {
             label {>}
-            xywh {200 390 10 20} box THIN_UP_BOX labelcolor 4
+            xywh {200 422 10 20} box THIN_UP_BOX labelcolor 4
           }
           Fl_Button sweepLocButton {
             label {Sweep Loc}
-            xywh {10 410 80 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
+            xywh {10 442 80 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
           }
           Fl_Slider sweepLocSlider {
-            xywh {100 410 100 20} type {Horz Knob} box THIN_DOWN_BOX color 7 selection_color 15
+            xywh {100 442 100 20} type {Horz Knob} box THIN_DOWN_BOX color 7 selection_color 15
           }
           Fl_Input sweepLocInput {
-            xywh {210 410 65 20} type Float box THIN_DOWN_BOX labelsize 12 when 8 textsize 12
+            xywh {210 442 65 20} type Float box THIN_DOWN_BOX labelsize 12 when 8 textsize 12
           }
           Fl_Repeat_Button sweepLocButtonL {
             label {<}
-            xywh {90 410 10 20} box THIN_UP_BOX labelcolor 4
+            xywh {90 442 10 20} box THIN_UP_BOX labelcolor 4
           }
           Fl_Repeat_Button sweepLocButtonR {
             label {>}
-            xywh {200 410 10 20} box THIN_UP_BOX labelcolor 4
+            xywh {200 442 10 20} box THIN_UP_BOX labelcolor 4
           }
           Fl_Box {} {
             label Num
@@ -760,15 +764,51 @@ class MsWingUI {open
           }
           Fl_Light_Button relativeTwistButton {
             label Relative
-            xywh {200 435 75 20} labelfont 1 labelsize 12 align 148
+            xywh {200 467 75 20} labelfont 1 labelsize 12 align 148
           }
           Fl_Button {} {
             label {WashOut (-Twist) Ref}
-            xywh {10 435 190 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
+            xywh {10 467 190 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
           }
           Fl_Light_Button rotateAirfoilButton {
             label {Rotate Foil To Match Dihedal}
             xywh {10 180 265 20} labelfont 1 labelsize 12 align 148
+          }
+          Fl_Button LESButton {
+            label {LE Sweep}
+            xywh {10 360 80 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
+          }
+          Fl_Slider LESSlider {
+            xywh {100 360 100 20} type {Horz Knob} box THIN_DOWN_BOX color 7 selection_color 15
+          }
+          Fl_Input LESInput {
+            xywh {210 360 65 20} type Float box THIN_DOWN_BOX labelsize 12 when 8 textsize 12
+          }
+          Fl_Repeat_Button LESButtonL {
+            label {<}
+            xywh {90 360 10 20} box THIN_UP_BOX labelcolor 4
+          }
+          Fl_Repeat_Button LESButtonR {
+            label {>}
+            xywh {200 360 10 20} box THIN_UP_BOX labelcolor 4
+          }
+          Fl_Button TESButton {
+            label {TE Sweep}
+            xywh {10 379 80 20} box THIN_UP_BOX labelfont 1 labelsize 12 align 64
+          }
+          Fl_Slider TESSlider {
+            xywh {100 379 100 20} type {Horz Knob} box THIN_DOWN_BOX color 7 selection_color 15
+          }
+          Fl_Input TESInput {
+            xywh {210 379 65 20} type Float box THIN_DOWN_BOX labelsize 12 when 8 textsize 12
+          }
+          Fl_Repeat_Button TESButtonL {
+            label {<}
+            xywh {90 379 10 20} box THIN_UP_BOX labelcolor 4
+          }
+          Fl_Repeat_Button TESButtonR {
+            label {>}
+            xywh {200 379 10 20} box THIN_UP_BOX labelcolor 4
           }
         }
         Fl_Group dihedGroup {
@@ -939,23 +979,23 @@ class MsWingUI {open
           Fl_Choice airfoilTypeChoice {open
             xywh {75 105 135 20} down_box BORDER_BOX
           } {
-            menuitem fourSeriesMenu {
+            MenuItem fourSeriesMenu {
               label {NACA 4-Series}
               xywh {0 0 100 20}
             }
-            menuitem biconvexMenu {
+            MenuItem biconvexMenu {
               label Biconvex
               xywh {0 0 100 20}
             }
-            menuitem wedgeMenu {
+            MenuItem wedgeMenu {
               label Wedge
               xywh {0 0 100 20}
             }
-            menuitem readFileMenu {
+            MenuItem readFileMenu {
               label {Read File}
               xywh {0 0 100 20}
             }
-            menuitem sixSeriesMenu {
+            MenuItem sixSeriesMenu {
               label {NACA 6-Series}
               xywh {0 0 100 20}
             }
@@ -1039,35 +1079,35 @@ class MsWingUI {open
           Fl_Choice sixSeriesChoice {open
             xywh {85 215 55 20} down_box BORDER_BOX
           } {
-            menuitem six63Menu {
+            MenuItem six63Menu {
               label 63
               xywh {0 0 100 20}
             }
-            menuitem six64Menu {
+            MenuItem six64Menu {
               label 64
               xywh {10 10 100 20}
             }
-            menuitem six65Menu {
+            MenuItem six65Menu {
               label 65
               xywh {20 20 100 20}
             }
-            menuitem six66Menu {
+            MenuItem six66Menu {
               label 66
               xywh {30 30 100 20}
             }
-            menuitem six67Menu {
+            MenuItem six67Menu {
               label 67
               xywh {40 40 100 20}
             }
-            menuitem six63aMenu {
+            MenuItem six63aMenu {
               label 63a
               xywh {50 50 100 20}
             }
-            menuitem six64aMenu {
+            MenuItem six64aMenu {
               label 64a
               xywh {60 60 100 20}
             }
-            menuitem six65aMenu {
+            MenuItem six65aMenu {
               label 65a
               xywh {70 70 100 20}
             }
