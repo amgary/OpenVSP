@@ -1024,10 +1024,24 @@ void Ms_wing_geom::matchWingSects()
       ndriver = MS_AR_TR_TC; 
     }
 
-    sects[i-1].driver = ndriver;
-    sects[i-1].tc_set( sects[i].rc_val() );
-    sects[i-1].fillDependData();
-    sects[i-1].driver = odriver;
+    if ( odriver == MS_SLE_STE_RC_S )
+    {
+    	double new_rc, span, les, tes, tc;
+    	span = sects[i-1].span_val();
+    	les = sects[i-1].le_sweep_val();
+    	tes = sects[i-1].te_sweep_val();
+    	tc = sects[i].rc_val();
+    	new_rc = tc+span*(tan(les*DEG_2_RAD) + tan(-1*tes*DEG_2_RAD));
+    	sects[i-1].rc_set(new_rc);
+    	sects[i-1].fillDependData();
+    }
+    else
+    {
+        sects[i-1].driver = ndriver;
+        sects[i-1].tc_set( sects[i].rc_val() );
+        sects[i-1].fillDependData();
+        sects[i-1].driver = odriver;
+    }
   }
   //==== Start From Current Section and Work Out ====//
   for ( i = currSect ; i < (int)sects.size() - 1 ; i++ )
@@ -1040,6 +1054,10 @@ void Ms_wing_geom::matchWingSects()
     {
       ndriver = MS_AR_TR_RC; 
     }
+
+    if ( odriver == MS_SLE_STE_RC_S )
+    	ndriver = MS_SLE_STE_RC_S;
+
     sects[i+1].driver = ndriver;
     sects[i+1].rc_set( sects[i].tc_val() );
     sects[i+1].fillDependData();
