@@ -1847,7 +1847,12 @@ void Ms_wing_geom::set_depend_parms()
 
   }
 
-  sects[currSect].fillDependData();
+  // Make all sections update so linking between sections works
+
+  for ( unsigned int i = 0 ; i < sects.size() ; i++ )
+  {
+	  sects[i].fillDependData();
+  }
   matchWingSects();
 
   //==== Compute Total Span ====//
