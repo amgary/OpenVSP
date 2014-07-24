@@ -152,7 +152,7 @@ void WingSect::fillDependData()
         rc   = (2.0*span()) / ( ar()*(1.0+tr()) );
         tc   = tr()*rc();
         le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
-        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
+        te_sweep = atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_AR_TR_S:
@@ -160,7 +160,7 @@ void WingSect::fillDependData()
         rc   = (2.0*span()) / ( ar()*(1.0+tr()) );
         tc   = tr()*rc();
         le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
-        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
+        te_sweep = atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_AR_TR_TC:
@@ -168,7 +168,7 @@ void WingSect::fillDependData()
         span = 0.5*ar()*rc()*(1.0+tr());
         area = (span() * span()) / ar();
         le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
-        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
+        te_sweep = atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_AR_TR_RC:
@@ -176,7 +176,7 @@ void WingSect::fillDependData()
         span = 0.5*ar()*rc()*(1.0+tr());
         area = (span() * span()) / ar();
         le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
-        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
+        te_sweep = atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_S_TC_RC:
@@ -184,7 +184,7 @@ void WingSect::fillDependData()
         ar   = 2.0*span()/( rc()*(1.0+tr()) );
         area = (span() * span()) / ar();
         le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
-        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
+        te_sweep = atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_A_TC_RC:
@@ -192,7 +192,7 @@ void WingSect::fillDependData()
         ar    = 2.0*span()/( rc()*(1.0+tr()) );
         span  = sqrt( ar()*area() );
         le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
-        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
+        te_sweep = atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_TR_S_A:
@@ -200,7 +200,7 @@ void WingSect::fillDependData()
         rc = (2.0*span()) / ( ar()*(1.0+tr()) );
         tc = tr()*rc();
         le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
-        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
+        te_sweep = atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_AR_A_RC:
@@ -208,15 +208,15 @@ void WingSect::fillDependData()
         tr = (2.0*span())/(ar()*rc()) - 1.0;
         tc = tr()*rc();
         le_sweep = atan( tan_sweep_at(0,0) )*RAD_2_DEG;
-        te_sweep = -1*atan( tan_sweep_at(1,0) )*RAD_2_DEG;
+        te_sweep = atan( tan_sweep_at(1,0) )*RAD_2_DEG;
       break;
 
       case MS_SLE_STE_RC_S:
-    	tc = rc()-span()*(tan(le_sweep()*DEG_2_RAD) + tan(te_sweep()*DEG_2_RAD));
+    	tc = rc()-span()*(tan(le_sweep()*DEG_2_RAD) + tan(-1*te_sweep()*DEG_2_RAD));
     	if ( tc() <= 0.0001 )
     	{
-    		tc = 0.0001;
-    		span = (-tc()+rc())/(tan(le_sweep()*DEG_2_RAD) + tan(te_sweep()*DEG_2_RAD));
+            tc = 0.0001;
+            span = (-tc()+rc())/(tan(le_sweep()*DEG_2_RAD) + tan(-1*te_sweep()*DEG_2_RAD));
     	}
     	tr = tc()/rc();
     	ar   = 2.0*span()/( rc()*(1.0+tr()) );
