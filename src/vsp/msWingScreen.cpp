@@ -254,7 +254,9 @@ void MsWingScreen::show(Geom* geomPtr)
 	TCSlider->set_parm_ptr( currGeom->get_sect_tc() );
 	TCInput->set_parm_ptr( currGeom->get_sect_tc() );
 
-	msWingUI->driverChoice->value( currGeom->get_driver() ); 
+	int d = currGeom->get_driver();
+	if ( d == MS_SLE_STE_RC_S ) d = 7;
+	msWingUI->driverChoice->value( d );
 
 	sectProjSpanOutput->set_parm_ptr( currGeom->get_sect_proj_span() ); 
 	sectProjSpanOutput->deactivate();
